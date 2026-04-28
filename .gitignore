@@ -1,0 +1,35 @@
+# Dependências
+node_modules/
+package-lock.json
+
+# Builds e artefatos
+dist/
+build/
+*.zip
+*.crx
+*.pem
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporários
+*.tmp
+*.bak
+~$*
+
+# Específicos do projeto
+notes/
+.scratch/
