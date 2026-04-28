@@ -35,3 +35,5 @@ Registro de operações e solicitações por sessão. Cada entrada agrupa as aç
 - [x] Atualização de CHANGELOG, IMPLEMENTATIONS, OPERATIONS.
 - [x] Validação edge case #5 (mudar layout do Meet) — ⚠️ funciona com fricção: layouts Auto/Mosaico/Lado a lado OK, **"Em destaque" remove a cam do DOM** se não for o tile destacado. Limitação documentada em `TECHNICAL_NOTES.md` (5.5) e em recomendações de uso no `README.md`.
 - [x] Confirmação de que o HD Simulcast hint não vence layout pequeno (seção 5.6 em `TECHNICAL_NOTES.md`) — Spotlight da cam marcada é a única alavanca confiável pra HD.
+- [x] Hotfix v0.1.1 — avisos no popup quando tile da CAM/SLIDES sumiu do DOM (cobertura UX do edge case "Em destaque").
+- [x] Build v0.1.1 + commit + release + docs.

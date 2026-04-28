@@ -119,11 +119,27 @@
       border-radius: 3px;
     }
     .hint.hidden { display: none; }
+    #warnings {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    #warnings:empty { display: none; }
+    .warning {
+      font-size: 11px;
+      color: #ffb74d;
+      line-height: 1.4;
+      padding: 8px 10px;
+      background: rgba(255, 152, 0, 0.12);
+      border-left: 3px solid #ff9800;
+      border-radius: 3px;
+    }
   </style>
 </head>
 <body>
   <h1>Meet Split for Broadcast</h1>
-  <div class="subtitle">v0.1.0 - MVP</div>
+  <div class="subtitle">v0.1.1 - layout warnings</div>
 
   <div class="row">
     <button type="button" id="btn-mark-cam" class="cam">Marcar CAM</button>
@@ -151,6 +167,7 @@
   </div>
 
   <div id="status">Carregando...</div>
+  <div id="warnings"></div>
 
   <details>
     <summary>Debug</summary>

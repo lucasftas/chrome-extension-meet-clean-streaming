@@ -21,6 +21,16 @@ Primeira commit do repositório. Sem código de extensão ainda — apenas captu
 - Distribuição: ZIP versionado em GitHub Release (load unpacked), Chrome Web Store fica para depois.
 - Privacidade: projeto será público — sem referências a empresa/marca pessoal em nenhum artefato.
 
+## v0.1.1 — 2026-04-28 — Avisos de layout no popup
+
+Patch incremental focado em UX: quando o split está ativo mas o tile da CAM/SLIDES sumiu do DOM (típico do layout "Em destaque" do Meet, que remove participantes não destacados), o popup mostra um aviso laranja explicando o que aconteceu e como mitigar (mudar layout no Meet ou fixar/Spotlight a cam marcada).
+
+**Entregue:**
+- `popup.html`: estilos `.warning` + container `#warnings` em modo "vazio = display:none".
+- `popup.js`: lógica `renderState()` adiciona warnings dinamicamente quando `splitActive && (camPid && !camMarked)` ou `splitActive && (slidesPid && !slidesMarked)`.
+
+Não há mudanças no `content.js` ou `style.css` — apenas UX no popup.
+
 ## v0.1.0 — 2026-04-28 — MVP funcional
 
 Primeira release com extensão completa e validada em sessão real do Meet.

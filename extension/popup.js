@@ -5,6 +5,7 @@
 
 const els = {
   status: document.getElementById('status'),
+  warnings: document.getElementById('warnings'),
   pillCam: document.getElementById('pill-cam'),
   pillSlides: document.getElementById('pill-slides'),
   selectionHint: document.getElementById('selection-hint'),
@@ -88,6 +89,25 @@ function renderState(s) {
   const camStatus = s.camMarked ? 'OK' : (s.camPid ? 'aguardando re-render' : 'pendente');
   const slidesStatus = s.slidesMarked ? 'OK' : (s.slidesPid ? 'aguardando re-render' : 'pendente');
   setStatus(`videos: ${s.videoCount}\nCAM: ${camStatus}\nSLIDES: ${slidesStatus}\nsplit: ${s.splitActive ? 'ATIVO' : 'desligado'}`);
+
+  // Avisos quando split ativo + slot marcado mas tile sumiu do DOM
+  // (tipico de layout 'Em destaque' do Meet ou screenshare interrompido)
+  els.warnings.innerHTML = '';
+  if (s.splitActive) {
+    if (s.camPid && !s.camMarked) {
+      addWarning('CAM nao encontrada no DOM. Provavelmente o layout do Meet esta em "Em destaque" e a cam marcada nao e o tile destacado. Use Auto/Mosaico/Lado a lado, ou fixe (Spotlight) o tile da cam marcada.');
+    }
+    if (s.slidesPid && !s.slidesMarked) {
+      addWarning('SLIDES nao encontrado no DOM. Verifique se o screenshare ainda esta ativo. (Se o convidado parou e voltou a compartilhar, o auto-redetect deve assumir em segundos.)');
+    }
+  }
+}
+
+function addWarning(text) {
+  const div = document.createElement('div');
+  div.className = 'warning';
+  div.textContent = text;
+  els.warnings.appendChild(div);
 }
 
 async function refresh() {

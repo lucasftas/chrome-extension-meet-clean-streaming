@@ -15,6 +15,13 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Ícone próprio (16/48/128 PNG).
 - Publicação na Chrome Web Store.
 
+## [0.1.1] - 2026-04-28
+
+### Added
+- Avisos no popup quando split está ativo mas o tile correspondente não está no DOM (típico do layout "Em destaque" do Meet, que faz culling de tiles fora de destaque).
+- Mensagem de orientação no aviso de CAM: sugere usar layouts Auto/Mosaico/Lado a lado, ou fixar/Spotlight a cam marcada.
+- Mensagem de orientação no aviso de SLIDES: lembra do auto-redetect quando screenshare reinicia.
+
 ## [0.1.0] - 2026-04-28
 
 ### Added
