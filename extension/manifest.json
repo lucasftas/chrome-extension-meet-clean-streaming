@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "Meet Split for Broadcast",
+  "version": "0.1.0",
+  "description": "Splits Google Meet into clean CAM and SLIDES feeds for broadcast software (vMix, OBS, Wirecast).",
+  "host_permissions": [
+    "https://meet.google.com/*"
+  ],
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting",
+    "clipboardWrite"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Meet Split for Broadcast"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://meet.google.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "style.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

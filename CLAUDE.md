@@ -66,19 +66,20 @@ Prefixos: `feat`, `fix`, `docs`, `refactor`, `style`, `test`, `chore`, `build`.
 
 1. Abrir `chrome://extensions/`
 2. Ativar **Modo de programador**
-3. **Carregar não compactada** → selecionar a pasta do repositório
+3. **Carregar não compactada** → selecionar a pasta `extension/` (NÃO a raiz do repo)
 4. Acessar `meet.google.com/<sala>` e clicar no ícone da extensão
 
 ## Estrutura do projeto
 
 ```
 chrome-extension-meet-clean-streaming/
-├── manifest.json              # Manifest V3 (a criar)
-├── content.js                 # MutationObserver, DOM cleanup, split layout (a criar)
-├── style.css                  # Classes msb-* para layout split (a criar)
-├── popup.html                 # UI do popup da extensão (a criar)
-├── popup.js                   # Lógica do popup (a criar)
-├── icons/                     # 16/48/128 PNG (a criar)
+├── extension/                 # Tudo que vai no ZIP da Load unpacked
+│   ├── manifest.json          # Manifest V3
+│   ├── content.js             # MutationObserver, DOM cleanup, split layout
+│   ├── style.css              # Classes msb-* para layout split
+│   ├── popup.html             # UI do popup da extensão
+│   ├── popup.js               # Lógica do popup
+│   └── icons/                 # 16/48/128 PNG (a criar)
 ├── scripts/
 │   └── build-zip.ps1          # Empacotador para release (a criar)
 ├── README.md                  # Documentação pública
@@ -86,17 +87,20 @@ chrome-extension-meet-clean-streaming/
 ├── CHANGELOG.md               # Keep a Changelog
 ├── IMPLEMENTATIONS.md         # Histórico de implementações por versão
 ├── OPERATIONS.md              # Log de operações por sessão
+├── TECHNICAL_NOTES.md         # Notas técnicas, decisões arquiteturais e workarounds
 └── Implementação-Meet-ISO.md  # Spec original (referência histórica)
 ```
 
+**Por que `extension/` separado?** Tudo que o Chrome carrega via Load unpacked fica num único diretório isolado, sem misturar com docs/scripts do repo. O `build-zip.ps1` empacota exatamente o conteúdo de `extension/` — sem filtros nem exclusões manuais.
+
 ## Build / Release
 
-A "build" é apenas um ZIP da pasta raiz (excluindo `.git`, `.md`, `scripts/`, `Implementação-Meet-ISO.md`):
+A "build" é apenas um ZIP do conteúdo de `extension/` (sem incluir a pasta `extension/` em si — Chrome Web Store espera `manifest.json` na raiz do ZIP):
 
 ```powershell
 # scripts/build-zip.ps1 (a criar)
-$version = (Get-Content manifest.json | ConvertFrom-Json).version
-Compress-Archive -Path manifest.json,content.js,style.css,popup.html,popup.js,icons -DestinationPath "dist/meet-split-for-broadcast-v$version.zip" -Force
+$version = (Get-Content extension/manifest.json | ConvertFrom-Json).version
+Compress-Archive -Path extension/* -DestinationPath "dist/meet-split-for-broadcast-v$version.zip" -Force
 ```
 
 ZIP é anexado ao GitHub Release no gatilho `filé`.

@@ -1,0 +1,135 @@
+/*
+ * Meet Split for Broadcast - Content Styles
+ *
+ * Classes:
+ *  - body.msb-selecting / .msb-selecting-cam / .msb-selecting-slides
+ *      Modo de selecao ativo: cursor crosshair + outline em hover sobre tiles.
+ *  - body.msb-active
+ *      Split mode ligado: overlay preto fullscreen.
+ *  - video[data-msb-clone="cam"|"slides"]
+ *      Clones criados em document.body via syncClones() com srcObject das streams
+ *      originais. Position fixed em 50/50, fora do stacking context do Meet.
+ */
+
+/* ============== Modo de selecao ============== */
+
+body.msb-selecting,
+body.msb-selecting * {
+  cursor: crosshair !important;
+}
+
+body.msb-selecting [data-participant-id] {
+  outline-offset: -4px;
+  transition: outline-color 100ms ease;
+}
+
+body.msb-selecting-cam [data-participant-id]:hover {
+  outline: 4px solid #2d7ff9 !important;
+  box-shadow: 0 0 0 9999px rgba(45, 127, 249, 0.15) inset !important;
+}
+
+body.msb-selecting-slides [data-participant-id]:hover {
+  outline: 4px solid #4caf50 !important;
+  box-shadow: 0 0 0 9999px rgba(76, 175, 80, 0.15) inset !important;
+}
+
+/* ============== Split mode ============== */
+
+body.msb-active {
+  overflow: hidden !important;
+}
+
+/* Overlay preto fullscreen escondendo a UI do Meet
+ * Ancorado em bottom: 0 pra coincidir com a base da viewport (igual aos clones).
+ */
+body.msb-active::before {
+  content: '';
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+  z-index: 2147483646;
+  pointer-events: auto;
+}
+
+/* Clones criados em document.body via syncClones()
+ *
+ * IMPORTANTE: ancorados em bottom:0 (nao top:0) pra que a base dos boxes
+ * fique sempre alinhada com a base do navegador. Garante posicao estavel
+ * independente de barra de favoritos, modo fullscreen, ou qualquer outra
+ * variaçao na altura da chrome do browser - util pra captura externa
+ * (Crop em coordenadas absolutas no vMix, recorte de tela, etc).
+ */
+video[data-msb-clone] {
+  position: fixed !important;
+  bottom: 0 !important;
+  height: 100vh !important;
+  width: 50vw !important;
+  object-fit: contain !important;
+  /* object-position: centro horizontal + base vertical
+   * Cola o conteudo do video na base do pane. Com aspect ratio diferente
+   * do pane, o letterbox preto fica todo em cima (em vez de dividido entre
+   * cima e baixo). Combinado com bottom:0, garante que a base do conteudo
+   * do video coincide com a base da viewport. */
+  object-position: 50% 100% !important;
+  background: #000 !important;
+  z-index: 2147483647 !important;
+  display: block !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  transform: none !important;
+  filter: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  clip-path: none !important;
+  pointer-events: none !important;
+}
+
+video[data-msb-clone="cam"] {
+  left: 0 !important;
+  right: auto !important;
+}
+
+video[data-msb-clone="slides"] {
+  left: 50vw !important;
+  right: auto !important;
+}
+
+/* HD trick: quando split ativo, forca os <video> ORIGINAIS marcados
+ * (data-msb-role, NAO os clones) a renderizarem off-screen em 1920x1080.
+ *
+ * Por que isso aumenta a resolucao do clone:
+ *   O Meet usa Simulcast (envia varias resolucoes simultaneas) e escolhe
+ *   qual track decodificar baseado no bounding rect do <video> renderizado.
+ *   Tile pequeno (ex: 1016x572) -> pede 360p. Tile grande (1920x1080) ->
+ *   pede 720p ou 1080p. Como o clone compartilha a MESMA MediaStream do
+ *   original (via srcObject), aumentar a res pedida no original beneficia
+ *   o clone automaticamente.
+ *
+ * Off-screen via left:-10000px em vez de display:none/visibility:hidden
+ * pra garantir que o renderer continue decodificando (display:none pararia
+ * a track, e visibility:hidden em alguns browsers reduz prioridade).
+ *
+ * z-index: -1 garante que fica atras de tudo (nao pode ser visto). */
+body.msb-active video[data-msb-role] {
+  position: fixed !important;
+  left: -10000px !important;
+  top: 0 !important;
+  bottom: auto !important;
+  right: auto !important;
+  width: 1920px !important;
+  height: 1080px !important;
+  z-index: -1 !important;
+  pointer-events: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+  filter: none !important;
+}
+
+/* Sem aviso textual quando algum slot estiver vazio - panes pretos sao
+ * suficientes pra sinalizar pro operador, e nao vazam pro vMix durante
+ * intervalos transitorios (ex: screenshare parando e voltando). */

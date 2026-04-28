@@ -146,7 +146,7 @@ Nenhuma chamada de rede, nenhum servidor, nenhuma API externa.
 1. Clone o repositório.
 2. Abra `chrome://extensions/` no Chrome.
 3. Ative **Modo de programador** (canto superior direito).
-4. Clique em **Carregar não compactada** → selecione a pasta do repositório.
+4. Clique em **Carregar não compactada** → selecione a pasta **`extension/`** dentro do repositório (não a raiz).
 5. (Opcional, recomendado) Inicie o Chrome com flags de hardening:
    ```
    chrome.exe --disable-renderer-backgrounding --disable-background-timer-throttling --disable-backgrounding-occluded-windows
