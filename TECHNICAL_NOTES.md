@@ -259,12 +259,51 @@ Spotlight/Pin no Meet é a alavanca mais confiável pra HD da cam — promove o 
 
 ## 7. Setup do vMix (ingestão)
 
-1. **Add Input** → **Local Desktop Capture** → selecione a janela do Chrome.
-2. Clique no input criado → **Position** → **Crop**:
-   - Input "CAM": Crop pela direita até 50% (mostra apenas metade esquerda).
-   - Input "SLIDES": clone do mesmo Desktop Capture, Crop pela esquerda até 50% (mostra apenas metade direita).
-3. **Importante:** os panes têm aspect ratio dependente do tamanho da janela. Pra panes 16:9 limpos, redimensione a janela do Chrome pra **3840×1080** (2 panes 1920×1080 lado a lado). Em monitor menor, aceite letterbox no clipe.
-4. Mantenha a janela do Chrome **visível ou em monitor virtual** pra evitar throttle do Chrome (já mitigado pelas flags + override de Visibility, mas redundância vale).
+### 7.1 Atalho do Chrome com flags
+
+Sem as 3 flags de hardening, qualquer site congela quando o Chrome perde foco/é coberto. Atalho do Windows (`.lnk`) com:
+
+```
+Target: C:\Program Files\Google\Chrome\Application\chrome.exe
+Arguments: --disable-renderer-backgrounding --disable-background-timer-throttling --disable-backgrounding-occluded-windows
+```
+
+⚠️ **Antes de abrir**, fechar TODAS as instâncias do Chrome (incluindo processos no Gerenciador de Tarefas). Senão o atalho abre nova janela na instância antiga sem flags. Validar em `chrome://version/` → "Linha de comando".
+
+### 7.2 Window Capture Method — usar WindowsGraphicsCapture
+
+No vMix Add Input → Desktop → Window Capture, há 4 métodos:
+
+| Método | Comportamento |
+|---|---|
+| `Default` | vMix decide. Inconsistente. |
+| `GDI` | API antiga. **Falha** com conteúdo GPU-acelerado (Chrome com WebRTC). Pode mostrar tela preta. |
+| `WindowsGraphicsCapture` | ✅ **Recomendado.** API moderna (Win10 1803+). Captura GPU-rendered, sobrevive a occlusion. |
+| `DWM` | Funciona, mas tem casos onde o Chrome (próprios buffers GPU) renderiza errado. |
+
+### 7.3 Inputs com Crop
+
+1. **Add Input** → **Desktop** → Source: **Window Capture** → janela do Chrome.
+2. **Window Capture Method**: `WindowsGraphicsCapture`.
+3. Crie 2 inputs com mesma janela:
+   - "CAM": Crop Right = 50% (mostra esquerda)
+   - "SLIDES": Crop Left = 50% (mostra direita)
+
+### 7.4 Janela do Chrome — não minimize
+
+- **Janela coberta (occluded)** por outra janela (ex: vMix em fullscreen) → flags cuidam, render continua.
+- **Janela minimizada** (clique no `_`) → Chrome pausa render. Flag não vence isso (decisão do Windows + Chrome). Em produção, evite minimizar — deixe occluded.
+- Pra panes 16:9 limpos, redimensione a janela pra **3840×1080** (2 panes 1920×1080 lado a lado). Em monitor menor, aceite letterbox.
+
+### 7.5 Tentativa descartada — Browser Input do vMix
+
+O Browser Input nativo do vMix (CEF) aceita CSS injection, mas:
+- Cada Update recarrega a página → volta pra pre-join screen do Meet
+- Sessão Google não persiste entre reloads
+- `getUserMedia` pode ser bloqueado interativamente
+- Sem JS pra clonar `srcObject`, não dá pra fazer split
+
+A rota Chrome externo + extensão + Desktop Capture é a viável.
 
 ---
 

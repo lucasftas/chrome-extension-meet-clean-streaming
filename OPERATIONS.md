@@ -37,3 +37,9 @@ Registro de operações e solicitações por sessão. Cada entrada agrupa as aç
 - [x] Confirmação de que o HD Simulcast hint não vence layout pequeno (seção 5.6 em `TECHNICAL_NOTES.md`) — Spotlight da cam marcada é a única alavanca confiável pra HD.
 - [x] Hotfix v0.1.1 — avisos no popup quando tile da CAM/SLIDES sumiu do DOM (cobertura UX do edge case "Em destaque").
 - [x] Build v0.1.1 + commit + release + docs.
+- [x] Validação end-to-end com vMix Desktop Capture.
+- [x] Atalho `Chrome (vMix).lnk` criado em `D:\Editor - Lucas\~ Streaming\` com as 3 flags de hardening pré-aplicadas.
+- [x] Diagnóstico: occluded/background = OK com flags; minimize ainda pausa (decisão Windows/Chrome). Workaround: deixar occluded (não minimizar).
+- [x] Teste de Browser Input nativo do vMix com CSS injection — descartado (CEF perde sessão Google a cada Update + sem JS, não há split).
+- [x] Validação de Window Capture Method — `WindowsGraphicsCapture` é o melhor (WGC moderno, suporta GPU-rendered + occlusion). GDI falha com Chrome. DWM intermediário.
+- [x] Atualização de README e TECHNICAL_NOTES com seção 7 (vMix setup completa) e seção "Recomendações de uso em produção".

@@ -155,7 +155,22 @@ Nenhuma chamada de rede, nenhum servidor, nenhuma API externa.
 
 Pra evitar surpresas durante uma transmissão ao vivo:
 
-- **Layout do Meet:** use **Auto**, **Mosaico** ou **Lado a lado**. **Evite "Em destaque"** — o Meet faz culling de tiles fora de destaque e a cam pode sumir do split. Se for necessário usar "Em destaque", **fixe/Spotlight a cam que está marcada na extensão**.
-- **Resolução HD da cam:** peça ao convidado pra ativar **Configurações → Vídeo → Resolução de envio: HD (720p)**. Sem isso, o teto é o que ele envia.
-- **Antes de cada nova sala:** clique em **Limpar seleções** no popup (PIDs persistem no storage e podem ficar stale entre sessões).
-- **Inicie o Chrome com as flags de hardening** acima — evita o Chrome pausar mídia se a janela perder foco.
+### Setup do Chrome
+- **Inicie o Chrome com as flags de hardening** (criar atalho com as 3 flags no campo Destino). Sem `--disable-backgrounding-occluded-windows`, qualquer página congela quando a janela é coberta — testável abrindo `horacerta.com`, cobrindo o Chrome, e voltando: o relógio fica congelado se as flags não estão ativas.
+- **Não minimize a janela do Chrome durante a transmissão.** O Windows trata minimize como "não-visível" no nível do SO, e nem flag resolve isso. Em vez de minimizar, deixe o Chrome **atrás de outras janelas** (occluded) — as flags cuidam desse cenário. Em produção real com vMix em fullscreen sobre o Chrome, esse comportamento já é natural.
+
+### Captura no vMix
+- **Add Input → Desktop → Window Capture**, selecionando a janela do Chrome.
+- **Window Capture Method = `WindowsGraphicsCapture`** (não `Default`, `GDI` ou `DWM`). É a única que captura corretamente conteúdo hardware-accelerated do Chrome (WebRTC) e sobrevive a occlusion. GDI pode mostrar tela preta com Chrome GPU-acelerado.
+- Crie 2 inputs com a mesma janela como source: um com **Crop Right = 50%** (vira CAM), outro com **Crop Left = 50%** (vira SLIDES). Renomeie pra "CAM" e "SLIDES" no vMix.
+
+### Layout no Meet
+- Use **Auto**, **Mosaico** ou **Lado a lado**. **Evite "Em destaque"** — o Meet faz culling de tiles fora de destaque e a cam pode sumir do split. Se for necessário usar "Em destaque", **fixe/Spotlight a cam que está marcada na extensão**.
+- A extensão mostra **avisos laranja no popup** quando split está ativo mas o tile da CAM/SLIDES não está no DOM (típico do "Em destaque").
+
+### Resolução
+- Peça ao convidado pra ativar **Configurações → Vídeo → Resolução de envio: HD (720p)** no Meet dele. Sem isso, o teto é o que ele envia.
+- Pra forçar HD da cam recebida, use Spotlight/Pin do Meet **no tile que está marcado como CAM na extensão**. O simulcast vai pedir a track de alta resolução.
+
+### Reset entre sessões
+- **Antes de cada nova sala:** clique em **Limpar seleções** no popup. PIDs persistem no storage e podem ficar stale entre sessões diferentes do Meet.
