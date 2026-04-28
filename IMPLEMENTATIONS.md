@@ -21,6 +21,17 @@ Primeira commit do repositório. Sem código de extensão ainda — apenas captu
 - Distribuição: ZIP versionado em GitHub Release (load unpacked), Chrome Web Store fica para depois.
 - Privacidade: projeto será público — sem referências a empresa/marca pessoal em nenhum artefato.
 
+## v0.1.2 — 2026-04-28 — Menu de contexto (clique direito)
+
+Endereça o caso da popup window do Meet (recurso "Abrir em janela separada") onde a janela não tem barra de URL nem ícone da extensão na toolbar — o operador não tinha como acessar comandos da extensão. Solução: menu de contexto via `chrome.contextMenus` API, disponível em qualquer janela do Chrome com URL no padrão `meet.google.com/*`.
+
+**Entregue:**
+- `extension/background.js` (service worker MV3) registrando menus em `onInstalled` + `onStartup` (este último cobre o caso de service worker dormir e acordar).
+- 4 itens de menu + 1 separador: Marcar CAM/SLIDES (captura PID do tile clickado), Toggle Split, Limpar.
+- `content.js` memoriza `lastContextTarget` via listener de `contextmenu` event.
+- Comando `markFromContext` no listener de mensagens — usa o target memorizado pra extrair PID via `findParticipantId(lastContextTarget)`. Mais rápido que o fluxo de 2 cliques do popup.
+- Permissão `contextMenus` no manifest.
+
 ## v0.1.1 — 2026-04-28 — Avisos de layout no popup
 
 Patch incremental focado em UX: quando o split está ativo mas o tile da CAM/SLIDES sumiu do DOM (típico do layout "Em destaque" do Meet, que remove participantes não destacados), o popup mostra um aviso laranja explicando o que aconteceu e como mitigar (mudar layout no Meet ou fixar/Spotlight a cam marcada).

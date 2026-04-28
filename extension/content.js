@@ -275,6 +275,14 @@
   // capture phase = roda antes dos handlers do Meet
   document.addEventListener('click', handleSelectionClick, true);
 
+  // Memoriza o ultimo target de clique direito - usado pelo menu de contexto
+  // (background.js) pra capturar PID direto do tile sem precisar do fluxo
+  // de 2 cliques (botao no popup + click no tile)
+  let lastContextTarget = null;
+  document.addEventListener('contextmenu', (e) => {
+    lastContextTarget = e.target;
+  }, true);
+
   // ================== MutationObserver ==================
 
   let pendingApply = false;
@@ -457,6 +465,31 @@
       case 'startSelection': {
         enterSelectionMode(msg.role);
         sendResponse({ ok: true, selectionMode: state.selectionMode });
+        return false;
+      }
+      case 'markFromContext': {
+        if (msg.role !== 'cam' && msg.role !== 'slides') {
+          sendResponse({ ok: false, error: 'role invalida' });
+          return false;
+        }
+        if (!lastContextTarget) {
+          sendResponse({ ok: false, error: 'nenhum target de clique direito memorizado' });
+          return false;
+        }
+        const pid = findParticipantId(lastContextTarget);
+        if (!pid) {
+          sendResponse({ ok: false, error: 'sem [data-participant-id] no caminho do target' });
+          return false;
+        }
+        if (msg.role === 'cam') {
+          state.camPid = pid;
+        } else {
+          state.slidesPid = pid;
+        }
+        log(`Marcado via menu de contexto: ${msg.role} = ${pid}`);
+        saveState();
+        applyMarks();
+        sendResponse({ ok: true, role: msg.role, pid });
         return false;
       }
       case 'cancelSelection': {

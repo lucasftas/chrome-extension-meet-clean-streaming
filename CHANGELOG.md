@@ -15,6 +15,18 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Ícone próprio (16/48/128 PNG).
 - Publicação na Chrome Web Store.
 
+## [0.1.2] - 2026-04-28
+
+### Added
+- **Menu de contexto (clique direito)** com comandos da extensão diretamente no menu nativo do Chrome. Resolve o caso da popup window do Meet ("Abrir em janela separada") onde o ícone da extensão na toolbar não está visível.
+- Itens do menu:
+  - **Marcar CAM/SLIDES no tile clickado** — captura o `data-participant-id` direto do elemento sob o cursor (clique direito), sem precisar do fluxo de 2 cliques (botão no popup + click no tile).
+  - **Ativar/Desativar Split** — toggle direto.
+  - **Limpar seleções** — reset rápido.
+- `extension/background.js` (service worker) registrando os menus em `chrome.runtime.onInstalled` e `onStartup`, com `documentUrlPatterns` restrito a `meet.google.com`.
+- Permissão `contextMenus` adicionada ao manifest.
+- Listener de `contextmenu` no content.js memoriza o último target pra ser usado em "Marcar X no tile clickado".
+
 ## [0.1.1] - 2026-04-28
 
 ### Added

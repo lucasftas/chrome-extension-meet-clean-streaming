@@ -43,3 +43,5 @@ Registro de operações e solicitações por sessão. Cada entrada agrupa as aç
 - [x] Teste de Browser Input nativo do vMix com CSS injection — descartado (CEF perde sessão Google a cada Update + sem JS, não há split).
 - [x] Validação de Window Capture Method — `WindowsGraphicsCapture` é o melhor (WGC moderno, suporta GPU-rendered + occlusion). GDI falha com Chrome. DWM intermediário.
 - [x] Atualização de README e TECHNICAL_NOTES com seção 7 (vMix setup completa) e seção "Recomendações de uso em produção".
+- [x] Feature v0.1.2 — menu de contexto (clique direito) com comandos da extensão. Cobre o caso da popup window do Meet ("Abrir em janela separada") onde não há ícone da extensão na toolbar. Captura PID direto do tile clickado, sem fluxo de 2 cliques.
+- [x] Build v0.1.2 + commit + release + docs.
