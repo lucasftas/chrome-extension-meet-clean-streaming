@@ -33,3 +33,5 @@ Registro de operações e solicitações por sessão. Cada entrada agrupa as aç
 - [x] Commit + push da implementação MVP.
 - [x] `gh release create v0.1.0 --generate-notes --target main` + upload do ZIP anexado.
 - [x] Atualização de CHANGELOG, IMPLEMENTATIONS, OPERATIONS.
+- [x] Validação edge case #5 (mudar layout do Meet) — ⚠️ funciona com fricção: layouts Auto/Mosaico/Lado a lado OK, **"Em destaque" remove a cam do DOM** se não for o tile destacado. Limitação documentada em `TECHNICAL_NOTES.md` (5.5) e em recomendações de uso no `README.md`.
+- [x] Confirmação de que o HD Simulcast hint não vence layout pequeno (seção 5.6 em `TECHNICAL_NOTES.md`) — Spotlight da cam marcada é a única alavanca confiável pra HD.

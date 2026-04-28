@@ -223,6 +223,18 @@ Mesma conta Google + mesma sala = uma aba kicka a outra. Pra ter 2 instâncias r
 
 Se na sala houver outro participante com cam em 1280×720+ E o SLIDES não estiver ativo, `findScreenshareCandidate` pode escolher essa cam HD em vez do screenshare correto. Mitigação: `videoWidth >= 1000` filtra a maioria dos casos, mas não 100%. Se acontecer em produção, operador re-marca SLIDES manualmente (storage atualiza).
 
+### 5.5 Layout "Em destaque" do Meet remove tiles do DOM
+
+Quando o operador (ou o convidado) escolhe layout "Em destaque" no Meet, o algoritmo de culling do Meet **remove do DOM os `<video>` de participantes que não estão em destaque nem na barra lateral**. Se a cam marcada como CAM na extensão não é o tile destacado, ela some — sem tile no DOM, sem `data-participant-id` correspondente, `applyMarks` não acha nada e o clone cam fica preto.
+
+Não é remediável via JS (não dá pra forçar o Meet a manter o `<video>` no DOM contra a vontade do algoritmo dele). Mitigação: orientar o operador a usar layouts **"Auto", "Mosaico" ou "Lado a lado"** durante a transmissão, OU fixar/Spotlight a cam que está marcada na extensão.
+
+### 5.6 HD Simulcast hint não vence layout pequeno
+
+O truque off-screen 1920×1080 (seção 4.2) ajuda mas não é determinante. Se o layout escolhido pelo Meet renderiza o tile da cam em tamanho pequeno (ex: 669×377 em layout "Lado a lado" com vários tiles), o Meet decide resolução baseado nesse tamanho original, e o nosso `<video>` em 1920×1080 off-screen **é ignorado**. Resultado: cam continua chegando em 360p mesmo com o truque ativo.
+
+Spotlight/Pin no Meet é a alavanca mais confiável pra HD da cam — promove o tile a destaque, o Meet pede 720p+ do simulcast. Sem isso, qualquer layout com tile pequeno trava em SD.
+
 ---
 
 ## 6. Edge cases — status
@@ -237,11 +249,11 @@ Se na sala houver outro participante com cam em 1280×720+ E o SLIDES não estiv
 | 4 | Sair e voltar na mesma sala | PIDs mudam (nova sessão); operador "Limpa seleções" + re-marca CAM. Auto-redetect cobre SLIDES quando screenshare voltar |
 | 6 | 3+ participantes | Marcação por PID exato — outros tiles ignorados, mesmo se outro participante for fixado/spotlight no Meet |
 
-### Não testados ainda (⏳)
+### Funciona com fricção (⚠️)
 
-| # | Cenário | Expectativa |
+| # | Cenário | Limitação |
 |---|---|---|
-| 5 | Mudar layout (galeria/destaque/lado a lado) | PIDs estáveis; MutationObserver re-aplica marks após re-render do layout |
+| 5 | Mudar layout (galeria/lado a lado/destaque/mosaico) | Auto, Mosaico e Lado a lado funcionam normalmente. **"Em destaque" (Spotlight) quebra a cam** se a cam marcada não for o tile destacado — o Meet faz culling agressivo e remove o `<video>` da cam não-destacada do DOM. Mitigação: o operador deve fixar/spotlight **a cam que está marcada na extensão**, ou usar layout "Lado a lado"/"Auto"/"Mosaico" durante a transmissão. |
 
 ---
 

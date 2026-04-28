@@ -139,11 +139,9 @@ Nenhuma chamada de rede, nenhum servidor, nenhuma API externa.
 - [vMix Desktop Capture](https://www.vmix.com/help26/DesktopCapture.html) — guia de captura de janela.
 - [Page Visibility API workarounds](https://developer.chrome.com/blog/background_tabs/) — referência de throttling de abas inativas.
 
-## Como instalar (alpha)
+## Como instalar
 
-> ⚠️ Ainda não há build versionada. Os passos abaixo assumem código fonte local após v0.1.0.
-
-1. Clone o repositório.
+1. Clone o repositório (ou baixe o ZIP da [última release](https://github.com/lucasftas/chrome-extension-meet-clean-streaming/releases)).
 2. Abra `chrome://extensions/` no Chrome.
 3. Ative **Modo de programador** (canto superior direito).
 4. Clique em **Carregar não compactada** → selecione a pasta **`extension/`** dentro do repositório (não a raiz).
@@ -152,3 +150,12 @@ Nenhuma chamada de rede, nenhum servidor, nenhuma API externa.
    chrome.exe --disable-renderer-backgrounding --disable-background-timer-throttling --disable-backgrounding-occluded-windows
    ```
 6. Acesse uma sala do Google Meet e clique no ícone da extensão.
+
+## Recomendações de uso em produção
+
+Pra evitar surpresas durante uma transmissão ao vivo:
+
+- **Layout do Meet:** use **Auto**, **Mosaico** ou **Lado a lado**. **Evite "Em destaque"** — o Meet faz culling de tiles fora de destaque e a cam pode sumir do split. Se for necessário usar "Em destaque", **fixe/Spotlight a cam que está marcada na extensão**.
+- **Resolução HD da cam:** peça ao convidado pra ativar **Configurações → Vídeo → Resolução de envio: HD (720p)**. Sem isso, o teto é o que ele envia.
+- **Antes de cada nova sala:** clique em **Limpar seleções** no popup (PIDs persistem no storage e podem ficar stale entre sessões).
+- **Inicie o Chrome com as flags de hardening** acima — evita o Chrome pausar mídia se a janela perder foco.
