@@ -21,6 +21,41 @@ Primeira commit do repositório. Sem código de extensão ainda — apenas captu
 - Distribuição: ZIP versionado em GitHub Release (load unpacked), Chrome Web Store fica para depois.
 - Privacidade: projeto será público — sem referências a empresa/marca pessoal em nenhum artefato.
 
-## Próxima versão planejada — v0.1.0 (MVP)
+## v0.1.0 — 2026-04-28 — MVP funcional
 
-- Implementação dos 4 pilares do MVP: split-screen, seleção por click, toggle pelo popup, hardening anti-pause + flags documentadas.
+Primeira release com extensão completa e validada em sessão real do Meet.
+
+**Entregue:**
+- Estrutura `extension/` com Manifest V3, content script, popup UI, CSS de modo seleção + split.
+- Selection mode via click → captura `data-participant-id` do ancestral.
+- Split mode com 2 `<video>` clones em `document.body` (escapando do stacking context do Meet) compartilhando `srcObject` dos originais.
+- Auto-redetect heurístico para SLIDES quando o screenshare reinicia com novo PID.
+- Filtro de cadáver (`srcObject !== null`) + listeners de stream (`loadedmetadata`/`emptied`) cobrem o caso de cam off/on, onde o Meet deixa elementos órfãos no DOM.
+- HD Simulcast hint (off-screen 1920×1080) induz Meet a pedir tracks de alta resolução.
+- Hardening anti-throttle: override de Page Visibility API + heartbeat rAF + flags Chrome documentadas.
+- Posicionamento bottom-anchored com `object-position: 50% 100%` pra base do conteúdo coincidir com base da janela do Chrome — útil pra captura externa em coordenadas absolutas.
+- `scripts/build-zip.ps1` empacotador de release.
+- `TECHNICAL_NOTES.md` com descobertas do DOM do Meet, decisões e workarounds.
+
+**Calibração iterativa em 8 versões internas:**
+- v0.0.1: esqueleto inspetor (apenas DOM dump pra calibrar contra Meet real)
+- v0.0.2: implementação fase 2 (selection mode + split mode com originais)
+- v0.0.3: clones via `srcObject` (resolveu invisibilidade dos vídeos por stacking context)
+- v0.0.4: ancoragem `bottom: 0` em vez de `top: 0`
+- v0.0.5: `object-position: 50% 100%` (conteúdo colado na base)
+- v0.0.6: HD Simulcast hint (off-screen 1920×1080 nos originais)
+- v0.0.7: auto-redetect SLIDES + clones permanentes no DOM (zero flicker)
+- v0.0.8: filtro de cadáver + listeners de stream (cam off/on)
+- v0.1.0: bumpa pra release oficial após validação dos edge cases #1, #2, #3, #4, #6
+
+**Edge case #5 (mudar layout do Meet) ainda pendente** — não bloqueante, viraria hotfix v0.1.x se aparecer fricção.
+
+**Decisões arquiteturais documentadas em `TECHNICAL_NOTES.md`.**
+
+## Próxima versão planejada — v0.2.x
+
+- Validar edge case #5 (mudar layout) e fechar bugs descobertos em produção real.
+- Suporte a múltiplas câmeras (1 prof + 1 convidado em painel único).
+- Layouts customizáveis (PIP, 30/70).
+- Auto-detecção heurística de cam vs slides (sem precisar click manual).
+- Ícone próprio (16/48/128 PNG).
