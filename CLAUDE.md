@@ -16,13 +16,41 @@ Extensão Chrome (Manifest V3) que injeta manipulação de DOM no Google Meet pa
 
 ## Regras do projeto
 
-### Privacidade — projeto será publicado
+### Privacidade — repositório PÚBLICO
 
-Este projeto **vai virar público** (GitHub público + possivelmente Chrome Web Store) quando ficar robusto. Por isso:
+⚠️ **Tratar este repositório como público em todo commit, sempre.** Mesmo se estiver privado no GitHub no momento, qualquer mudança pode virar pública a qualquer instante — não há janela "vou publicar depois, deixo passar agora". Toda decisão de versionamento assume audiência aberta.
 
-- **NÃO** incluir nomes de empresas, marcas pessoais, e-mails do dono ou referências a contextos privados em qualquer artefato versionado (código, docs, manifest, ícones, screenshots, mensagens de commit, release notes).
-- Caso de uso descrito sempre de forma **genérica** — "operadores de broadcast", "produtoras educacionais", "eventos online" — sem citar empresa específica.
-- Issues e PRs públicos no futuro: descrever bugs/features sem expor contexto interno.
+**Categorias que NUNCA devem ser versionadas:**
+
+- **Identidade do dono ou de empresas/marcas associadas a ele** — nomes comerciais, marcas pessoais, e-mails reais, redes sociais, telefones. Caso de uso e contexto sempre genéricos ("operadores de broadcast", "produtoras de conteúdo educacional"), nunca específicos.
+- **Paths locais de máquina** (qualquer caminho absoluto começando com letra de drive seguida de `\` ou `/Users/`). Substituir por descrição genérica tipo `<pasta-de-streaming>` ou simplesmente "uma pasta na sua máquina".
+- **IDs de salas/sessões de testes do Meet** — códigos como o que aparece após `meet.google.com/`, identificadores de space (`spaces/{...}`) ou device (`devices/{...}`). Sanitizar para placeholders genéricos como `meet.google.com/abc-defg-hij` e `spaces/<space>/devices/<device>` antes de incluir em docs/mocks.
+- **JSONs de inspeção do DOM** (snapshots) com IDs reais — sanitizar PIDs e space IDs antes de versionar.
+- **Logs de console** com PIDs reais — substituir por placeholders.
+- **Screenshots** com URLs reais, nomes de pessoas ou conteúdo confidencial de slides visíveis. Borrar ou regerar antes de incluir.
+- **Nomes de participantes** em testes — usar "professor", "convidado", "apresentador", "operador" em vez de nomes reais (mesmo placeholders que pareçam com pessoas reais devem ser evitados).
+
+**Sempre escrever de forma genérica em mensagens de commit, descrições de PR, release notes** — descrever bugs/features sem expor contexto interno.
+
+**Checklist obrigatório antes de commit/release que toca docs, mocks ou JSONs de exemplo:**
+
+Rodar do raiz do repo:
+
+```bash
+# Padrões a verificar (lista de termos é gerenciada localmente, não versionada)
+# Se algum match aparecer fora dos lugares esperados, sanitizar antes de commitar.
+git grep -iE "<padrão1>|<padrão2>|<padrão3>"
+```
+
+Os termos exatos a procurar (nomes de empresa do dono, IDs de salas reais usadas em testes, paths absolutos da máquina) são pessoais e ficam no `~/.claude/CLAUDE.md` global do dono — não são versionados aqui.
+
+**Resultado esperado:** zero matches (exceto links pro próprio repositório, que são corretos).
+
+**Quando o usuário fornecer dados reais durante o desenvolvimento** (ex: cola JSON do DOM com PIDs reais, ou path absoluto da máquina dele), Claude deve:
+
+1. Usar pra debug imediato (OK no chat / análise efêmera).
+2. **Sanitizar** antes de incluir em qualquer arquivo versionado (.md, mock HTML, código, screenshot, JSON de exemplo).
+3. Avisar proativamente se identificar dado sensível sendo incluído por engano em arquivo a ser commitado.
 
 ### Convenções de código
 
