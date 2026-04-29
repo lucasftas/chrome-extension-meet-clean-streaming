@@ -33,3 +33,15 @@ desktop.ini
 # Específicos do projeto
 notes/
 .scratch/
+
+# Logs internos do processo de desenvolvimento (mantidos localmente)
+OPERATIONS.md
+
+# Spec original que evoluiu durante o projeto - mantida localmente como histórico
+Implementação-Meet-ISO.md
+
+# Mocks de design interno (não fazem parte do produto)
+novas_implementacoes/
+
+# Config local do VSCode
+*.code-workspace

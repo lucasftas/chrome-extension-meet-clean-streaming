@@ -86,9 +86,13 @@ chrome-extension-meet-clean-streaming/
 ├── CLAUDE.md                  # Este arquivo
 ├── CHANGELOG.md               # Keep a Changelog
 ├── IMPLEMENTATIONS.md         # Histórico de implementações por versão
-├── OPERATIONS.md              # Log de operações por sessão
-├── TECHNICAL_NOTES.md         # Notas técnicas, decisões arquiteturais e workarounds
-└── Implementação-Meet-ISO.md  # Spec original (referência histórica)
+└── TECHNICAL_NOTES.md         # Notas técnicas, decisões arquiteturais e workarounds
+
+# Arquivos LOCAIS (não versionados, ver .gitignore):
+# - OPERATIONS.md              Log de processo de desenvolvimento (sessões internas)
+# - Implementação-Meet-ISO.md  Spec original que evoluiu durante o desenvolvimento
+# - novas_implementacoes/      Mocks interativos de design
+# - *.code-workspace           Config local do VSCode
 ```
 
 **Por que `extension/` separado?** Tudo que o Chrome carrega via Load unpacked fica num único diretório isolado, sem misturar com docs/scripts do repo. O `build-zip.ps1` empacota exatamente o conteúdo de `extension/` — sem filtros nem exclusões manuais.
@@ -113,5 +117,5 @@ Quando o usuário disser **"filé"**, seguir o fluxo global definido em `~/.clau
 3. Commit + push
 4. `gh release create vX.Y.Z --title "vX.Y.Z" --generate-notes --target main` + `--draft` se mudanças visuais não foram testadas
 5. Anexar o ZIP build ao release: `gh release upload vX.Y.Z dist/meet-split-for-broadcast-vX.Y.Z.zip`
-6. Atualizar `CHANGELOG.md`, `IMPLEMENTATIONS.md`, `OPERATIONS.md`
+6. Atualizar `CHANGELOG.md` e `IMPLEMENTATIONS.md` (versionados). `OPERATIONS.md` é local — atualizar opcionalmente como log pessoal.
 7. Commit + push dos `.md`

@@ -134,7 +134,6 @@ Nenhuma chamada de rede, nenhum servidor, nenhuma API externa.
 
 ## Referências
 
-- [Implementação técnica original](Implementação-Meet-ISO.md) — spec inicial que deu origem ao projeto.
 - [Chrome Extension Manifest V3](https://developer.chrome.com/docs/extensions/mv3/intro/)
 - [vMix Desktop Capture](https://www.vmix.com/help26/DesktopCapture.html) — guia de captura de janela.
 - [Page Visibility API workarounds](https://developer.chrome.com/blog/background_tabs/) — referência de throttling de abas inativas.
