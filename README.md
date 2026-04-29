@@ -89,15 +89,29 @@ In Chrome:
 
 ### 2. Launch Chrome with hardening flags (recommended for production)
 
-Without these flags, Chrome pauses rendering when the window loses focus (covered by another app), and your vMix capture freezes:
+Without these flags, Chrome pauses rendering when the window loses focus (covered by another app), and your video capture freezes mid-broadcast.
+
+**The fast way** (Windows + PowerShell):
+
+```powershell
+.\scripts\create-chrome-shortcut.ps1
+```
+
+Generates `Chrome (Broadcast).lnk` on your Desktop, pre-configured with all three flags. You can pass `-OutputFolder` and `-Name` to customize:
+
+```powershell
+.\scripts\create-chrome-shortcut.ps1 -OutputFolder "D:\Streaming" -Name "Chrome OBS"
+```
+
+**The manual way:** create a Windows shortcut with this in the Target field:
 
 ```
-chrome.exe --disable-renderer-backgrounding --disable-background-timer-throttling --disable-backgrounding-occluded-windows
+"C:\Program Files\Google\Chrome\Application\chrome.exe" --disable-renderer-backgrounding --disable-background-timer-throttling --disable-backgrounding-occluded-windows
 ```
 
-The cleanest way is creating a Windows shortcut with the flags appended to the Target field. **Close all running Chrome instances first** — Chrome reuses processes and ignores flags when adding a window to an existing instance.
+⚠️ **Before first use, close ALL existing Chrome windows** (and end any remaining `Google Chrome` processes in Task Manager). Chrome reuses processes — if any old instance is alive, the shortcut opens in it and **ignores the flags**.
 
-Verify the flags are active by opening `chrome://version/` and checking the **Command Line** field.
+Verify the flags are active by opening `chrome://version/` in the new window and checking the **Command Line** field. Quick behavior test: open `horacerta.com` in a tab, cover the Chrome window with another app for 30s, bring it back — the clock should show the right time (not frozen).
 
 ### 3. Use it
 
@@ -200,8 +214,9 @@ chrome-extension-meet-clean-streaming/
 │   ├── style.css             # msb-* classes for layout & cleanup
 │   └── icons/                # 16/48/128 PNG (procedurally generated)
 ├── scripts/
-│   ├── build-zip.ps1         # Bundles extension/ into a versioned ZIP
-│   └── build-icons.ps1       # Regenerates icons from procedural design
+│   ├── create-chrome-shortcut.ps1  # Generates Chrome shortcut with hardening flags
+│   ├── build-zip.ps1               # Bundles extension/ into a versioned ZIP
+│   └── build-icons.ps1             # Regenerates icons from procedural design
 ├── README.md                 # This file
 ├── CHANGELOG.md              # Version history (Keep a Changelog)
 ├── IMPLEMENTATIONS.md        # Per-version implementation notes

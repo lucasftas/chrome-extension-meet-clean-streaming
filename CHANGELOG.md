@@ -15,6 +15,16 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Ícone próprio (16/48/128 PNG).
 - Publicação na Chrome Web Store.
 
+## [0.2.4] - 2026-04-29
+
+### Added
+- **`scripts/create-chrome-shortcut.ps1`** — gerador de atalho Windows pra Chrome pré-configurado com as 3 flags de hardening (`--disable-renderer-backgrounding`, `--disable-background-timer-throttling`, `--disable-backgrounding-occluded-windows`). Detecta automaticamente o caminho do Chrome em locations padrão (Program Files / Program Files x86 / LocalAppData). Aceita parâmetros `-OutputFolder` (default: Desktop do usuário) e `-Name` (default: `Chrome (Broadcast)`).
+- README com nova subseção em "Quick start": comando rápido `.\scripts\create-chrome-shortcut.ps1` em vez de instruções manuais de criação de atalho.
+
+### Notes
+- Sem mudanças funcionais na extensão. ZIP `v0.2.4` é binariamente equivalente ao `v0.2.3`/`v0.2.2`.
+- O script foi smoke-tested contra o Chrome instalado: detecção, criação e validação do `.lnk` resultante OK.
+
 ## [0.2.3] - 2026-04-29
 
 ### Changed

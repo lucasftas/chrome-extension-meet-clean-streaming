@@ -21,6 +21,22 @@ Primeira commit do repositório. Sem código de extensão ainda — apenas captu
 - Distribuição: ZIP versionado em GitHub Release (load unpacked), Chrome Web Store fica para depois.
 - Privacidade: projeto será público — sem referências a empresa/marca pessoal em nenhum artefato.
 
+## v0.2.4 — 2026-04-29 — Gerador de atalho Chrome
+
+Pequena adição que reduz a fricção de setup pra novos usuários da extensão. Sem o atalho com flags de hardening, qualquer site congela quando o Chrome perde foco — o vMix capture vai pra cinza no meio da live. Antes da v0.2.4, o operador precisava criar manualmente um shortcut do Windows e colar 3 flags no campo Target. Agora roda 1 comando.
+
+**Entregue:**
+- `scripts/create-chrome-shortcut.ps1` — script PowerShell parametrizável que:
+  1. Detecta automaticamente o caminho do `chrome.exe` em locations padrão (Program Files, Program Files x86, LocalAppData)
+  2. Aceita `-OutputFolder` (default: Desktop) e `-Name` (default: `Chrome (Broadcast)`)
+  3. Cria o `.lnk` via WScript.Shell COM com TargetPath + Arguments + IconLocation + Description
+  4. Imprime instruções pós-criação (fechar Chrome anterior, validar via `chrome://version/`, teste com `horacerta.com`)
+- README atualizado com novo passo no Quick Start: comando único em vez de instruções manuais de criação de atalho.
+
+**Smoke test:** rodado contra Chrome instalado. Detecção em `C:\Program Files\Google\Chrome\Application\chrome.exe`, criação OK no `$env:TEMP\msb-test`, atalho válido com todas as propriedades, cleanup posterior.
+
+**Sem mudanças no ZIP da extensão** — o ZIP `v0.2.4` é binariamente equivalente ao `v0.2.3`/`v0.2.2`. Bump existe pra dar checkpoint visível no histórico de releases.
+
 ## v0.2.3 — 2026-04-29 — Maturidade documental + preparação pra publicação
 
 Release sem mudanças funcionais na extensão. Marca o milestone de documentação madura e repositório pronto pra ser tornado público quando o dono decidir.

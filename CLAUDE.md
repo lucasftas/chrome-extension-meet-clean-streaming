@@ -109,7 +109,9 @@ chrome-extension-meet-clean-streaming/
 │   ├── popup.js               # Lógica do popup
 │   └── icons/                 # 16/48/128 PNG (a criar)
 ├── scripts/
-│   └── build-zip.ps1          # Empacotador para release (a criar)
+│   ├── create-chrome-shortcut.ps1  # Gerador de atalho Chrome com flags de hardening
+│   ├── build-zip.ps1               # Empacotador para release
+│   └── build-icons.ps1             # Gerador procedural de ícones (16/48/128 PNG)
 ├── README.md                  # Documentação pública
 ├── CLAUDE.md                  # Este arquivo
 ├── CHANGELOG.md               # Keep a Changelog
