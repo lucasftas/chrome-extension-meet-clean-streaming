@@ -34,18 +34,102 @@
   })();
 
   if (isMeetPopup) {
-    console.log(LOG_PREFIX, 'Popup do Meet detectada - aplicando cleanup minimo.');
-    function applyPopupCleanup() {
+    console.log(LOG_PREFIX, 'Popup do Meet detectada em', window.location.href);
+
+    let popupClone = null;
+
+    function pickLiveVideo() {
+      // Pega o <video> original (nao clone) com srcObject, de maior area visual
+      const videos = Array.from(document.querySelectorAll('video:not([data-msb-clone])'));
+      let best = null;
+      let bestArea = 0;
+      for (const v of videos) {
+        if (!v.srcObject) continue;
+        const r = v.getBoundingClientRect();
+        const area = Math.max(r.width * r.height, v.videoWidth * v.videoHeight);
+        if (area > bestArea) {
+          bestArea = area;
+          best = v;
+        }
+      }
+      return best;
+    }
+
+    function syncPopupClone() {
       if (!document.body) return;
       document.body.dataset.msbMeetPopup = 'true';
+
+      const original = pickLiveVideo();
+
+      // Garante clone no DOM
+      if (!popupClone || !popupClone.isConnected) {
+        if (popupClone) {
+          popupClone.srcObject = null;
+        }
+        popupClone = document.createElement('video');
+        popupClone.autoplay = true;
+        popupClone.playsInline = true;
+        popupClone.muted = true;
+        popupClone.dataset.msbClone = 'popup';
+        document.body.appendChild(popupClone);
+        console.log(LOG_PREFIX, 'Clone popup criado.');
+      }
+
+      const newStream = original ? original.srcObject : null;
+      if (popupClone.srcObject !== newStream) {
+        popupClone.srcObject = newStream;
+        console.log(LOG_PREFIX, `Clone popup: stream ${newStream ? 'atribuida' : 'limpa'}.`);
+      }
     }
-    applyPopupCleanup();
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', applyPopupCleanup);
+
+    // Roda quando body existe + a cada mutacao significativa
+    function bootPopup() {
+      syncPopupClone();
+      let pending = false;
+      function schedule() {
+        if (pending) return;
+        pending = true;
+        requestAnimationFrame(() => {
+          pending = false;
+          syncPopupClone();
+        });
+      }
+      const obs = new MutationObserver(schedule);
+      obs.observe(document.documentElement, { childList: true, subtree: true });
+
+      // Listeners de stream em videos novos
+      function attach(v) {
+        if (v._msbListened || v.dataset.msbClone) return;
+        v._msbListened = true;
+        v.addEventListener('loadedmetadata', schedule);
+        v.addEventListener('emptied', schedule);
+      }
+      document.querySelectorAll('video').forEach(attach);
+      new MutationObserver((muts) => {
+        for (const m of muts) {
+          m.addedNodes.forEach(n => {
+            if (n.nodeType !== 1) return;
+            if (n.tagName === 'VIDEO') attach(n);
+            else if (n.querySelectorAll) n.querySelectorAll('video').forEach(attach);
+          });
+        }
+      }).observe(document.documentElement, { childList: true, subtree: true });
     }
-    // observa o body sendo criado/recriado pelo Meet
-    new MutationObserver(applyPopupCleanup).observe(document.documentElement, { childList: true });
-    return; // nao roda o resto da extensao nessa janela
+
+    if (document.body) {
+      bootPopup();
+    } else {
+      document.addEventListener('DOMContentLoaded', bootPopup);
+      // fallback: se body aparecer antes do DOMContentLoaded
+      const waitObs = new MutationObserver(() => {
+        if (document.body) {
+          waitObs.disconnect();
+          bootPopup();
+        }
+      });
+      waitObs.observe(document.documentElement, { childList: true });
+    }
+    return;
   }
 
   // ==============================================================

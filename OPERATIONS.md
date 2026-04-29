@@ -55,3 +55,4 @@ Registro de operações e solicitações por sessão. Cada entrada agrupa as aç
   - `background.js` com 4 itens de menu pra trocar modo direto.
   - `scripts/build-icons.ps1` gerando PNGs do design E em 16/48/128.
 - [x] Build v0.2.0 (15.65 KB) + commit + release + docs.
+- [x] Hotfix v0.2.1 — popup nativa do Meet ficava preta. Causa: regra CSS `body[data-msb-meet-popup] > *:not(video) { display:none }` escondia `<div>` wrapper junto com `<video>` dentro. Solução: clone via srcObject (mesma estratégia da janela principal) + overlay preto. Build + commit + release.

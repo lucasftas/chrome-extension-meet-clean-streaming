@@ -21,6 +21,16 @@ Primeira commit do repositório. Sem código de extensão ainda — apenas captu
 - Distribuição: ZIP versionado em GitHub Release (load unpacked), Chrome Web Store fica para depois.
 - Privacidade: projeto será público — sem referências a empresa/marca pessoal em nenhum artefato.
 
+## v0.2.1 — 2026-04-29 — Hotfix popup preta
+
+Corrige regressão da v0.2.0 onde a popup nativa do Meet ("Abrir em uma nova janela") ficava preta. Causa: regra CSS `body[data-msb-meet-popup] > *:not(video) { display: none !important }` escondia o `<div>` wrapper que continha o `<video>`, sumindo com o vídeo junto.
+
+**Solução:** mesma estratégia da janela principal — clone via `srcObject` em `<video>` novo criado direto em `document.body` da popup, com `position: fixed` em fullscreen. Overlay preto cobre o resto. Robusto contra estrutura DOM aninhada do Meet e stacking context.
+
+**Entregue:**
+- Path popup do `content.js` reescrito: detecta `<video>` original com `srcObject` (de maior área visual), cria clone, atribui stream, MutationObserver re-sincroniza.
+- `style.css` removeu regra `body > *:not(video)`. Adicionou overlay preto via `body[data-msb-meet-popup]::before` e regra `video[data-msb-clone="popup"]` posicionando clone em fullscreen.
+
 ## v0.2.0 — 2026-04-28 — Modos de layout + popup nativa + Design 3
 
 Release significativa: introduz múltiplos modos de operação (não só Split 50/50), suporta a popup nativa "Abrir em uma nova janela" do Meet com limpeza automática, popup redesenhado em estilo OBS/vMix com indicador LIVE, e ícone próprio gerado via System.Drawing.

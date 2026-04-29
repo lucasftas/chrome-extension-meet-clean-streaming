@@ -15,6 +15,16 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Ícone próprio (16/48/128 PNG).
 - Publicação na Chrome Web Store.
 
+## [0.2.1] - 2026-04-29
+
+### Fixed
+- **Popup nativa do Meet ficava preta** (regressão da v0.2.0). A regra CSS `body[data-msb-meet-popup] > *:not(video) { display: none }` era agressiva demais — escondia os `<div>` wrappers que continham o `<video>`, fazendo o vídeo desaparecer junto.
+
+### Changed
+- Substituído o cleanup baseado em "esconder filhos" pela mesma estratégia da janela principal: **clone via `srcObject`** num `<video>` novo direto em `document.body` da popup. Robusto contra stacking context e estrutura DOM aninhada do Meet.
+- Overlay preto fullscreen na popup (igual à janela principal) cobre UI residual sem precisar escondê-la elemento por elemento.
+- Adicionados listeners de `loadedmetadata` / `emptied` nos `<video>` da popup pra cobrir o caso do Meet criar o vídeo antes do `srcObject` estar atribuído.
+
 ## [0.2.0] - 2026-04-28
 
 ### Added
