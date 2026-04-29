@@ -15,6 +15,35 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Ícone próprio (16/48/128 PNG).
 - Publicação na Chrome Web Store.
 
+## [0.2.0] - 2026-04-28
+
+### Added
+- **Modos de layout** — substituem o toggle ON/OFF por 4 modos exclusivos:
+  - `off` — sem split, Meet normal
+  - `split` — 2 panes 50/50 lado a lado (CAM esq + SLIDES dir) — comportamento da v0.1.x
+  - `solo-cam` — apenas clone CAM em fullscreen
+  - `solo-slides` — apenas clone SLIDES em fullscreen
+- **Detecção da popup nativa do Meet** ("Abrir em uma nova janela" do screenshare) — content script com `match_about_blank: true` é injetado nessa janela e aplica CSS de limpeza (esconde UI residual, maximiza video em fullscreen). Pronto pra ser capturado pelo vMix como Window Capture independente.
+- **Popup Design 3 (Live Dashboard)** — redesign visual estilo OBS/vMix:
+  - Top bar com indicador `🔴 LIVE` pulsando quando modo != off
+  - Stats inline com PID + resolução (ex: `.../131 · 1280x720`)
+  - Grid 2×2 de modos com ícones grandes
+  - Info card de detecção da popup do Meet
+- **Ícone próprio** — design REC + Split (2 retângulos coloridos + bolinha vermelha) em 16/48/128 PNG, gerado via `scripts/build-icons.ps1` (System.Drawing).
+- **Menu de contexto expandido** — agora oferece itens diretos pra trocar modo:
+  - Modo Off / Split 50/50 / Solo CAM / Solo SLIDES
+  - Mantém Marcar CAM/SLIDES no tile clickado e Limpar.
+  - `documentUrlPatterns` removido pra cobrir popup `about:blank` do Meet.
+
+### Changed
+- `state.splitActive` (boolean) substituído por `state.mode` (string). Migração automática: storage com `msb_split_active=true` vira `mode='split'`.
+- `body.msb-active` agora é aplicado em qualquer modo != 'off' (mantido pra compat). Novas classes `body.msb-mode-{off|split|solo-cam|solo-slides}` controlam layout específico dos clones.
+- Comando `setMode { mode }` substitui (mas mantém atalho `toggleSplit` que faz off↔split).
+
+### Why
+- Operadores em produção real precisam alternar rapidamente entre apresentar só a câmera, só os slides, ou ambos lado a lado durante uma transmissão. Modos exclusivos cobrem isso.
+- O Meet já oferece nativamente "Abrir em uma nova janela" pro screenshare; em vez de duplicar essa funcionalidade, a extensão agora limpa essa popup automaticamente, fazendo cada janela virar 1 input nativo do vMix sem precisar de Crop.
+
 ## [0.1.2] - 2026-04-28
 
 ### Added

@@ -45,3 +45,13 @@ Registro de operações e solicitações por sessão. Cada entrada agrupa as aç
 - [x] Atualização de README e TECHNICAL_NOTES com seção 7 (vMix setup completa) e seção "Recomendações de uso em produção".
 - [x] Feature v0.1.2 — menu de contexto (clique direito) com comandos da extensão. Cobre o caso da popup window do Meet ("Abrir em janela separada") onde não há ícone da extensão na toolbar. Captura PID direto do tile clickado, sem fluxo de 2 cliques.
 - [x] Build v0.1.2 + commit + release + docs.
+- [x] Mock interativo `novas_implementacoes/multi-window-modes/mock-modes.html` criado com 6 ícones propostos + 4 designs de popup + 5 cenários de modos.
+- [x] Decisões de design v0.2.0 validadas com usuário: ícone E (REC + Split), Design 3 (Live Dashboard), 4 modos exclusivos (Off/Split/Solo CAM/Solo SLIDES), popup nativa do Meet usada (não Document PiP custom).
+- [x] Implementação v0.2.0:
+  - `content.js` refatorado: `state.mode` substitui `splitActive`, bifurcação main/popup, comando `setMode`.
+  - `style.css` reescrito com regras por modo + cleanup popup.
+  - `manifest.json`: `match_about_blank: true` + `all_frames: true`, `default_icon`, version 0.2.0.
+  - `popup.html` + `popup.js` redesenhados (Design 3 Live Dashboard com badge LIVE pulsando).
+  - `background.js` com 4 itens de menu pra trocar modo direto.
+  - `scripts/build-icons.ps1` gerando PNGs do design E em 16/48/128.
+- [x] Build v0.2.0 (15.65 KB) + commit + release + docs.

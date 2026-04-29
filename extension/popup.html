@@ -5,175 +5,306 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Meet Split for Broadcast</title>
   <style>
+    * { box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      width: 300px;
+      width: 320px;
       margin: 0;
       padding: 14px;
-      background: #1a1a1a;
+      background: #0a0a0a;
       color: #e8e8e8;
     }
-    h1 {
-      font-size: 14px;
-      margin: 0 0 2px 0;
-      color: #fff;
-    }
-    .subtitle {
-      font-size: 11px;
-      color: #999;
-      margin-bottom: 14px;
-    }
-    .row {
+
+    /* Top bar */
+    .topbar {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-bottom: 8px;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #222;
     }
-    button {
-      padding: 9px 12px;
-      background: #2d7ff9;
-      color: #fff;
+    .topbar-left { display: flex; align-items: center; gap: 8px; }
+    .topbar-title { font-size: 12px; font-weight: 600; }
+    .live-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: #ef4444;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .live-badge.idle { background: #444; opacity: 0.6; }
+    .live-badge .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: white;
+      animation: pulse 1.5s infinite;
+    }
+    .live-badge.idle .dot { animation: none; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* Stats grid */
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .stat-card {
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid;
+    }
+    .stat-card.cam { background: rgba(45, 127, 249, 0.1); border-color: rgba(45, 127, 249, 0.4); }
+    .stat-card.slides { background: rgba(76, 175, 80, 0.1); border-color: rgba(76, 175, 80, 0.4); }
+    .stat-label { font-size: 10px; margin-bottom: 4px; }
+    .stat-card.cam .stat-label { color: #87b9ed; }
+    .stat-card.slides .stat-label { color: #8fd48f; }
+    .stat-value {
+      font-family: ui-monospace, "Cascadia Code", monospace;
+      font-size: 11px;
+      margin-bottom: 6px;
+      min-height: 14px;
+      color: #ccc;
+    }
+    .stat-value.ok { color: #4ade80; }
+    .stat-value.pending { color: #999; }
+    .stat-btn {
+      width: 100%;
+      padding: 5px;
       border: none;
       border-radius: 4px;
-      font-size: 12px;
-      font-weight: 500;
-      cursor: pointer;
-      flex: 1;
-    }
-    button:hover { background: #1a6fe3; }
-    button:disabled { background: #444; color: #888; cursor: not-allowed; }
-    button.cam { background: #2d7ff9; }
-    button.cam:hover { background: #1a6fe3; }
-    button.slides { background: #4caf50; }
-    button.slides:hover { background: #3e9f43; }
-    button.toggle-on { background: #ff5722; }
-    button.toggle-on:hover { background: #e64a19; }
-    button.toggle-off { background: #888; }
-    button.toggle-off:hover { background: #666; }
-    button.secondary { background: #3a3a3a; flex: none; padding: 6px 10px; font-size: 11px; }
-    button.secondary:hover { background: #4a4a4a; }
-    .pill {
       font-size: 10px;
-      padding: 4px 8px;
+      font-weight: 600;
+      cursor: pointer;
+      color: white;
+    }
+    .stat-card.cam .stat-btn { background: #2d7ff9; }
+    .stat-card.cam .stat-btn:hover { background: #1a6fe3; }
+    .stat-card.slides .stat-btn { background: #4caf50; }
+    .stat-card.slides .stat-btn:hover { background: #3e9f43; }
+
+    .selection-hint {
+      font-size: 10px;
+      color: #ff9800;
+      background: rgba(255, 152, 0, 0.1);
+      border-left: 3px solid #ff9800;
+      padding: 6px 8px;
       border-radius: 3px;
-      background: #333;
-      color: #999;
-      white-space: nowrap;
-      flex-shrink: 0;
-      max-width: 110px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      font-family: ui-monospace, "Cascadia Code", monospace;
+      margin-bottom: 10px;
     }
-    .pill.marked { background: #1f4a1f; color: #8fd48f; }
-    .pill.cam-marked { background: #1a3a5a; color: #87b9ed; }
-    .divider {
-      border: none;
-      border-top: 1px solid #333;
-      margin: 12px 0;
+    .selection-hint.hidden { display: none; }
+
+    /* Mode selector grid 2x2 */
+    .section-label {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #888;
+      margin-bottom: 5px;
     }
-    #toggle-row { margin-top: 10px; }
+    .mode-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .mode-btn {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      padding: 10px 6px;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: center;
+      color: #ccc;
+      transition: all 100ms;
+    }
+    .mode-btn:hover { background: #222; border-color: #333; }
+    .mode-btn.active {
+      background: #2d7ff9;
+      border-color: #2d7ff9;
+      color: white;
+      box-shadow: 0 0 0 2px rgba(45, 127, 249, 0.3);
+    }
+    .mode-btn .mode-icon { font-size: 18px; display: block; margin-bottom: 2px; }
+    .mode-btn .mode-label { font-size: 9px; font-weight: 700; letter-spacing: 0.3px; }
+
+    /* Popup detected info */
+    .popup-info {
+      background: rgba(255, 152, 0, 0.1);
+      border: 1px solid rgba(255, 152, 0, 0.4);
+      border-radius: 6px;
+      padding: 8px;
+      margin-bottom: 10px;
+      font-size: 10px;
+    }
+    .popup-info-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    .popup-info-title { color: #ff9800; font-weight: 600; }
+    .popup-info-tag { font-size: 9px; padding: 1px 6px; border-radius: 3px; }
+    .popup-info-tag.detected { background: #16a34a; color: white; }
+    .popup-info-tag.idle { background: #444; color: #aaa; }
+    .popup-info-text { color: #999; line-height: 1.4; }
+
+    /* Footer */
+    .footer {
+      display: flex;
+      gap: 5px;
+      font-size: 9px;
+    }
+    .footer-btn {
+      flex: 1;
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      color: #ccc;
+      padding: 6px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .footer-btn:hover { background: #222; }
+
+    /* Warnings */
+    #warnings { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+    #warnings:empty { display: none; }
+    .warning {
+      font-size: 10px;
+      color: #ffb74d;
+      line-height: 1.4;
+      padding: 6px 8px;
+      background: rgba(255, 152, 0, 0.1);
+      border-left: 3px solid #ff9800;
+      border-radius: 3px;
+    }
+
+    /* Status text e debug */
     #status {
       margin-top: 10px;
-      padding: 8px;
+      padding: 6px 8px;
       background: #0d0d0d;
+      border: 1px solid #1a1a1a;
       border-radius: 4px;
-      font-size: 11px;
+      font-size: 10px;
       color: #aaa;
-      min-height: 18px;
+      min-height: 14px;
       white-space: pre-wrap;
-      font-family: ui-monospace, "Cascadia Code", monospace;
+      font-family: ui-monospace, monospace;
     }
-    details {
-      margin-top: 10px;
-      font-size: 11px;
-      color: #777;
-    }
-    details summary { cursor: pointer; padding: 4px 0; }
-    details .debug-buttons {
-      display: flex;
-      gap: 6px;
-      margin-top: 6px;
-    }
+    details { margin-top: 10px; font-size: 10px; color: #666; }
+    details summary { cursor: pointer; padding: 3px 0; }
+    details .debug-buttons { display: flex; gap: 5px; margin-top: 5px; }
+    details .footer-btn { font-size: 9px; padding: 4px; }
     #fallback {
       display: none;
       width: 100%;
-      height: 110px;
-      margin-top: 8px;
+      height: 100px;
+      margin-top: 6px;
       background: #0d0d0d;
       color: #e8e8e8;
-      border: 1px solid #333;
-      border-radius: 4px;
-      font-family: ui-monospace, "Cascadia Code", monospace;
-      font-size: 10px;
-      padding: 6px;
-      box-sizing: border-box;
-    }
-    .hint {
-      font-size: 10px;
-      color: #ff9800;
-      line-height: 1.4;
-      margin: 4px 0 8px 0;
-      padding: 6px;
-      background: rgba(255, 152, 0, 0.1);
+      border: 1px solid #2a2a2a;
       border-radius: 3px;
-    }
-    .hint.hidden { display: none; }
-    #warnings {
-      margin-top: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    #warnings:empty { display: none; }
-    .warning {
-      font-size: 11px;
-      color: #ffb74d;
-      line-height: 1.4;
-      padding: 8px 10px;
-      background: rgba(255, 152, 0, 0.12);
-      border-left: 3px solid #ff9800;
-      border-radius: 3px;
+      font-family: ui-monospace, monospace;
+      font-size: 9px;
+      padding: 5px;
     }
   </style>
 </head>
 <body>
-  <h1>Meet Split for Broadcast</h1>
-  <div class="subtitle">v0.1.2 - context menu</div>
 
-  <div class="row">
-    <button type="button" id="btn-mark-cam" class="cam">Marcar CAM</button>
-    <span id="pill-cam" class="pill">nao marcado</span>
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <svg width="16" height="16" viewBox="0 0 128 128">
+        <rect width="128" height="128" rx="20" fill="#0d0d0d"/>
+        <rect x="14" y="36" width="48" height="56" rx="4" fill="#2d7ff9"/>
+        <rect x="66" y="36" width="48" height="56" rx="4" fill="#4caf50"/>
+        <circle cx="64" cy="20" r="10" fill="#ef4444"/>
+      </svg>
+      <div class="topbar-title">SPLIT</div>
+    </div>
+    <div id="live-badge" class="live-badge idle">
+      <span class="dot"></span>
+      <span id="live-label">IDLE</span>
+    </div>
   </div>
 
-  <div class="row">
-    <button type="button" id="btn-mark-slides" class="slides">Marcar SLIDES</button>
-    <span id="pill-slides" class="pill">nao marcado</span>
+  <!-- Stats CAM e SLIDES -->
+  <div class="stats">
+    <div class="stat-card cam">
+      <div class="stat-label">📹 CAM</div>
+      <div id="stat-cam-value" class="stat-value pending">não marcado</div>
+      <button type="button" id="btn-mark-cam" class="stat-btn">Marcar CAM</button>
+    </div>
+    <div class="stat-card slides">
+      <div class="stat-label">🖥️ SLIDES</div>
+      <div id="stat-slides-value" class="stat-value pending">não marcado</div>
+      <button type="button" id="btn-mark-slides" class="stat-btn">Marcar SLIDES</button>
+    </div>
   </div>
 
-  <div class="hint hidden" id="selection-hint">
-    Modo selecao ativo - clique no tile desejado dentro do Meet.
+  <div class="selection-hint hidden" id="selection-hint">
+    Modo seleção ativo — clique no tile dentro do Meet.
   </div>
 
-  <div id="toggle-row" class="row">
-    <button type="button" id="btn-toggle-split" class="toggle-off">Ativar Split</button>
+  <!-- Mode selector -->
+  <div class="section-label">Modo</div>
+  <div class="mode-grid">
+    <button type="button" class="mode-btn" data-mode="off">
+      <span class="mode-icon">⚪</span>
+      <span class="mode-label">OFF</span>
+    </button>
+    <button type="button" class="mode-btn" data-mode="split">
+      <span class="mode-icon">▦</span>
+      <span class="mode-label">SPLIT</span>
+    </button>
+    <button type="button" class="mode-btn" data-mode="solo-cam">
+      <span class="mode-icon">📹</span>
+      <span class="mode-label">SOLO CAM</span>
+    </button>
+    <button type="button" class="mode-btn" data-mode="solo-slides">
+      <span class="mode-icon">🖥️</span>
+      <span class="mode-label">SOLO SLIDES</span>
+    </button>
   </div>
 
-  <hr class="divider">
-
-  <div class="row">
-    <button type="button" id="btn-clear" class="secondary">Limpar selecoes</button>
-    <button type="button" id="btn-refresh" class="secondary">Atualizar</button>
+  <!-- Popup detection info -->
+  <div class="popup-info">
+    <div class="popup-info-header">
+      <span class="popup-info-title">📡 SLIDES popup</span>
+      <span id="popup-info-tag" class="popup-info-tag idle">aguardando</span>
+    </div>
+    <div class="popup-info-text">Use o botão <code>↗ Abrir em uma nova janela</code> nativo do Meet. Extensão limpa UI automaticamente.</div>
   </div>
 
-  <div id="status">Carregando...</div>
+  <!-- Footer -->
+  <div class="footer">
+    <button type="button" id="btn-clear" class="footer-btn">🗑 Limpar</button>
+    <button type="button" id="btn-refresh" class="footer-btn">↻ Atualizar</button>
+  </div>
+
+  <!-- Warnings -->
   <div id="warnings"></div>
 
+  <!-- Status -->
+  <div id="status">Carregando…</div>
+
+  <!-- Debug -->
   <details>
     <summary>Debug</summary>
     <div class="debug-buttons">
-      <button type="button" id="btn-inspect" class="secondary">Inspecionar DOM</button>
-      <button type="button" id="btn-ping" class="secondary">Ping</button>
+      <button type="button" id="btn-inspect" class="footer-btn">Inspecionar DOM</button>
+      <button type="button" id="btn-ping" class="footer-btn">Ping</button>
     </div>
     <textarea id="fallback" readonly></textarea>
   </details>

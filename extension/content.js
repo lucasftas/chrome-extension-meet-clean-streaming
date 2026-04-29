@@ -1,33 +1,73 @@
 /**
  * Meet Split for Broadcast - Content Script
  *
- * - Selecao manual via click: usuario marca qual tile e CAM e qual e SLIDES
- * - Persistencia: data-participant-id salvo em chrome.storage.local
- * - MutationObserver: re-aplica data-msb-role nas <video> apos re-renders do Meet
- * - Split mode: classe msb-active no body ativa CSS de layout 50/50
- * - Keep-alive: override Page Visibility API + rAF loop pra evitar throttle
- * - Inspector: mantido pra debug
+ * Roda em 2 contextos:
+ *  1. Janela principal do Meet (meet.google.com/...)
+ *     -> selection mode + split/solo modes + clones em document.body
+ *  2. Popup nativa do Meet ("Abrir em uma nova janela" do screenshare)
+ *     -> apenas limpa UI residual + maximiza video
+ *
+ * Detecção: window.opener != null + URL "about:blank" (Document PiP) OU
+ * URL meet.google.com sem layout normal de sala.
  */
 
 (function () {
   'use strict';
 
   const LOG_PREFIX = '[MSB]';
+
+  // ==============================================================
+  // PATH 1: Popup nativa do Meet (slide em janela separada)
+  // ==============================================================
+  // Detecta: temos window.opener (popup) e nao temos a UI normal do Meet.
+  // Aplica CSS de limpeza + permite fullscreen video. Sai sem rodar split.
+  const isMeetPopup = (() => {
+    try {
+      if (!window.opener || window.opener === window) return false;
+      const openerHref = window.opener.location?.href || '';
+      const isOpenerMeet = openerHref.startsWith('https://meet.google.com/');
+      const isAboutBlank = window.location.href === 'about:blank';
+      return isOpenerMeet || isAboutBlank;
+    } catch {
+      return window.location.href === 'about:blank' && !!window.opener;
+    }
+  })();
+
+  if (isMeetPopup) {
+    console.log(LOG_PREFIX, 'Popup do Meet detectada - aplicando cleanup minimo.');
+    function applyPopupCleanup() {
+      if (!document.body) return;
+      document.body.dataset.msbMeetPopup = 'true';
+    }
+    applyPopupCleanup();
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', applyPopupCleanup);
+    }
+    // observa o body sendo criado/recriado pelo Meet
+    new MutationObserver(applyPopupCleanup).observe(document.documentElement, { childList: true });
+    return; // nao roda o resto da extensao nessa janela
+  }
+
+  // ==============================================================
+  // PATH 2: Janela principal do Meet
+  // ==============================================================
+
   const STORAGE_KEYS = {
     cam: 'msb_cam_pid',
     slides: 'msb_slides_pid',
-    active: 'msb_split_active'
+    mode: 'msb_mode',
+    splitActiveLegacy: 'msb_split_active'
   };
+
+  const VALID_MODES = ['off', 'split', 'solo-cam', 'solo-slides'];
 
   const state = {
     camPid: null,
     slidesPid: null,
-    splitActive: false,
+    mode: 'off',
     selectionMode: null
   };
 
-  // Clones criados pra evitar stacking-context do Meet capturando o position:fixed.
-  // Cada clone vive direto em document.body, com srcObject = MediaStream do video original.
   const cloneNodes = {
     cam: null,
     slides: null
@@ -43,21 +83,31 @@
     const data = await chrome.storage.local.get([
       STORAGE_KEYS.cam,
       STORAGE_KEYS.slides,
-      STORAGE_KEYS.active
+      STORAGE_KEYS.mode,
+      STORAGE_KEYS.splitActiveLegacy
     ]);
     state.camPid = data[STORAGE_KEYS.cam] || null;
     state.slidesPid = data[STORAGE_KEYS.slides] || null;
-    state.splitActive = !!data[STORAGE_KEYS.active];
+
+    // Migracao: se nao tem msb_mode mas tem msb_split_active, converte
+    if (data[STORAGE_KEYS.mode] && VALID_MODES.includes(data[STORAGE_KEYS.mode])) {
+      state.mode = data[STORAGE_KEYS.mode];
+    } else if (data[STORAGE_KEYS.splitActiveLegacy]) {
+      state.mode = 'split';
+    } else {
+      state.mode = 'off';
+    }
+
     log('Estado carregado:', state);
     applyMarks();
-    applySplitClass();
+    applyModeClass();
   }
 
   async function saveState() {
     await chrome.storage.local.set({
       [STORAGE_KEYS.cam]: state.camPid,
       [STORAGE_KEYS.slides]: state.slidesPid,
-      [STORAGE_KEYS.active]: state.splitActive
+      [STORAGE_KEYS.mode]: state.mode
     });
   }
 
@@ -79,21 +129,6 @@
     return document.querySelector(`[data-participant-id="${CSS.escape(pid)}"]`);
   }
 
-  /**
-   * Procura um tile candidato a slides quando o slidesPid salvo nao existe mais.
-   *
-   * Caso de uso: convidado para de compartilhar tela e re-compartilha. Cada
-   * sessao de screenshare gera um device novo no Meet (PID muda), entao o
-   * slidesPid persistido vira stale. Sem auto-redetect, o operador tem que
-   * re-marcar SLIDES manualmente toda vez.
-   *
-   * Heuristica:
-   *  - Tile com [data-participant-id] diferente do camPid
-   *  - Contem <video> NAO clone com videoWidth >= 1000 (descarta cams 360p/720p)
-   *  - Tile tem rect significativo no DOM original (descarta miniaturas tipo
-   *    self-view com 124x78px)
-   *  - Em caso de empate, escolhe o de maior area visual
-   */
   function findScreenshareCandidate() {
     const allTiles = document.querySelectorAll('[data-participant-id]');
     let best = null;
@@ -125,14 +160,6 @@
     return best;
   }
 
-  /**
-   * Marca o(s) video(s) "vivos" de um tile com data-msb-role.
-   *
-   * IMPORTANTE: o Meet costuma deixar <video> "cadaver" no DOM quando o
-   * participante desliga a camera (style="display:none" + srcObject=null).
-   * Quando religa, o Meet cria um <video> novo NO MESMO TILE sem remover o
-   * antigo. Pra nao confundir o syncClones, so marcamos os que TEM srcObject.
-   */
   function markLiveVideosInTile(tile, role) {
     if (!tile) return;
     tile.querySelectorAll('video:not([data-msb-clone])').forEach(v => {
@@ -143,20 +170,16 @@
   }
 
   function applyMarks() {
-    // Nao tocar nos clones do MSB
     document.querySelectorAll('video[data-msb-role]:not([data-msb-clone])').forEach(v => {
       v.removeAttribute('data-msb-role');
     });
 
-    // CAM: aplica direto pelo PID salvo
     if (state.camPid) {
       markLiveVideosInTile(findTileByPid(state.camPid), 'cam');
     }
 
-    // SLIDES: aplica pelo PID salvo OU auto-redetect se stale
     let slidesTile = state.slidesPid ? findTileByPid(state.slidesPid) : null;
     if (state.slidesPid && !slidesTile) {
-      // PID antigo nao existe mais (provavelmente screenshare reiniciou) -> tenta achar substituto
       const candidate = findScreenshareCandidate();
       if (candidate) {
         log(`Auto-redetect SLIDES: ${state.slidesPid} (stale) -> ${candidate.pid}`);
@@ -167,34 +190,33 @@
     }
     markLiveVideosInTile(slidesTile, 'slides');
 
-    // Re-sincroniza clones caso o Meet tenha recriado o <video> original
-    syncClones();
-  }
-
-  function applySplitClass() {
-    document.body.classList.toggle('msb-active', state.splitActive);
     syncClones();
   }
 
   /**
-   * Cria/atualiza/remove videos clonados em document.body, evitando o stacking
-   * context do Meet que prende position:fixed dos videos originais.
+   * Aplica as classes msb-active e msb-mode-* no body baseado em state.mode.
    *
-   * Estrategia: extrai a MediaStream (srcObject) do <video> original com
-   * data-msb-role e atribui a um <video> novo criado direto no body. Mesma
-   * stream, sem custo de banda. Os originais ficam escondidos via CSS.
-   *
-   * IMPORTANTE - estabilidade pra captura externa (vMix Desktop Capture):
-   * Enquanto splitActive=true, os clones SEMPRE permanecem no DOM, mesmo que
-   * o video original tenha sumido (screenshare parou, cam mutada, etc). Nesse
-   * caso so o srcObject vai pra null - o pane fica preto mas o elemento nao
-   * é removido. Isso evita flicker / reflow no preview do vMix durante
-   * intervalos de transicao (ex: convidado para e volta a compartilhar tela).
+   * - msb-active: presente quando mode != 'off' (overlay preto + clones visiveis)
+   * - msb-mode-split: clones em 50/50 lado a lado (CAM esq + SLIDES dir)
+   * - msb-mode-solo-cam: apenas clone cam fullscreen, slides hidden
+   * - msb-mode-solo-slides: apenas clone slides fullscreen, cam hidden
    */
+  function applyModeClass() {
+    const body = document.body;
+    if (!body) return;
+    body.classList.toggle('msb-active', state.mode !== 'off');
+    VALID_MODES.forEach(m => {
+      body.classList.toggle(`msb-mode-${m}`, state.mode === m);
+    });
+    syncClones();
+  }
+
+  // ================== Clones ==================
+
   function syncClones() {
     ['cam', 'slides'].forEach(role => {
-      // Split desligado -> remove clone do DOM se houver (volta ao Meet normal)
-      if (!state.splitActive) {
+      // Modo off -> remove clones (volta ao Meet normal)
+      if (state.mode === 'off') {
         if (cloneNodes[role]) {
           cloneNodes[role].srcObject = null;
           cloneNodes[role].remove();
@@ -203,7 +225,7 @@
         return;
       }
 
-      // Split ativo -> garante que existe um clone no DOM (mesmo que sem stream)
+      // Garantir que existe clone no DOM
       if (!cloneNodes[role] || !cloneNodes[role].isConnected) {
         if (cloneNodes[role]) {
           cloneNodes[role].srcObject = null;
@@ -218,9 +240,7 @@
         log(`Clone ${role} criado no DOM.`);
       }
 
-      // Atualiza srcObject - aceita null (pane fica preto) sem destruir o elemento
-      // Defensivo: ignora qualquer <video> "cadaver" sem srcObject (Meet costuma
-      // deixar elementos antigos no DOM quando cam desliga/religa).
+      // Atualiza srcObject (defensivo: ignora cadaveres sem srcObject)
       const candidates = document.querySelectorAll(`video[data-msb-role="${role}"]:not([data-msb-clone])`);
       let newStream = null;
       for (const v of candidates) {
@@ -231,7 +251,7 @@
       }
       if (cloneNodes[role].srcObject !== newStream) {
         cloneNodes[role].srcObject = newStream;
-        log(`Clone ${role}: stream ${newStream ? 'atribuida' : 'limpa (pane preto, sem remover)'}.`);
+        log(`Clone ${role}: stream ${newStream ? 'atribuida' : 'limpa (pane preto)'}.`);
       }
     });
   }
@@ -243,7 +263,7 @@
     document.body.classList.add('msb-selecting');
     document.body.classList.toggle('msb-selecting-cam', role === 'cam');
     document.body.classList.toggle('msb-selecting-slides', role === 'slides');
-    log(`Modo selecao ativado: ${role}. Clique no tile desejado.`);
+    log(`Modo selecao ativado: ${role}.`);
   }
 
   function exitSelectionMode() {
@@ -255,35 +275,29 @@
     if (!state.selectionMode) return;
     const pid = findParticipantId(e.target);
     if (!pid) {
-      log('Click sem [data-participant-id] no caminho. Clique direto sobre o tile.', e.target);
+      log('Click sem [data-participant-id]:', e.target);
       return;
     }
     e.preventDefault();
     e.stopPropagation();
     const role = state.selectionMode;
-    if (role === 'cam') {
-      state.camPid = pid;
-    } else if (role === 'slides') {
-      state.slidesPid = pid;
-    }
+    if (role === 'cam') state.camPid = pid;
+    else if (role === 'slides') state.slidesPid = pid;
     log(`Marcado: ${role} = ${pid}`);
     saveState();
     applyMarks();
     exitSelectionMode();
   }
 
-  // capture phase = roda antes dos handlers do Meet
   document.addEventListener('click', handleSelectionClick, true);
 
-  // Memoriza o ultimo target de clique direito - usado pelo menu de contexto
-  // (background.js) pra capturar PID direto do tile sem precisar do fluxo
-  // de 2 cliques (botao no popup + click no tile)
+  // Memoriza target do clique direito pro menu de contexto
   let lastContextTarget = null;
   document.addEventListener('contextmenu', (e) => {
     lastContextTarget = e.target;
   }, true);
 
-  // ================== MutationObserver ==================
+  // ================== MutationObserver + listeners ==================
 
   let pendingApply = false;
   function scheduleApply() {
@@ -295,8 +309,14 @@
     });
   }
 
+  function attachVideoListeners(video) {
+    if (video._msbListened || video.dataset.msbClone) return;
+    video._msbListened = true;
+    video.addEventListener('loadedmetadata', scheduleApply);
+    video.addEventListener('emptied', scheduleApply);
+  }
+
   const observer = new MutationObserver((mutations) => {
-    // Pega <video> novos que apareceram e atacha listeners de stream
     for (const m of mutations) {
       m.addedNodes.forEach(n => {
         if (n.nodeType !== 1) return;
@@ -314,53 +334,25 @@
     subtree: true
   });
 
-  /**
-   * Atacha listeners de stream em <video>. Necessario porque o MutationObserver
-   * nao detecta mudancas de srcObject (eh property JS, nao atributo). Sem isso,
-   * o caso "Meet cria <video> novo sem srcObject ainda, depois atribui" deixa
-   * o pane preto pra sempre.
-   *
-   *  - loadedmetadata: stream chegou (videoWidth/Height passa a ser != 0)
-   *  - emptied: srcObject foi anulado
-   */
-  function attachVideoListeners(video) {
-    if (video._msbListened || video.dataset.msbClone) return;
-    video._msbListened = true;
-    video.addEventListener('loadedmetadata', scheduleApply);
-    video.addEventListener('emptied', scheduleApply);
-  }
-
-  // Atacha em <video> ja existentes na primeira execucao
   document.querySelectorAll('video').forEach(attachVideoListeners);
 
-  // ================== Keep-alive anti-throttle ==================
+  // ================== Keep-alive ==================
 
   function applyKeepAlive() {
     try {
-      Object.defineProperty(document, 'hidden', {
-        get: () => false,
-        configurable: true
-      });
-      Object.defineProperty(document, 'visibilityState', {
-        get: () => 'visible',
-        configurable: true
-      });
-      document.addEventListener('visibilitychange', e => {
-        e.stopImmediatePropagation();
-      }, true);
+      Object.defineProperty(document, 'hidden', { get: () => false, configurable: true });
+      Object.defineProperty(document, 'visibilityState', { get: () => 'visible', configurable: true });
+      document.addEventListener('visibilitychange', e => e.stopImmediatePropagation(), true);
       log('Override de Page Visibility API aplicado.');
     } catch (err) {
       log('Falha ao aplicar override de visibility:', err);
     }
-
-    function tick() {
-      requestAnimationFrame(tick);
-    }
+    function tick() { requestAnimationFrame(tick); }
     requestAnimationFrame(tick);
   }
   applyKeepAlive();
 
-  // ================== Inspector (debug) ==================
+  // ================== Inspector ==================
 
   function describeElement(el, depth = 0) {
     if (!el || el.nodeType !== 1) return null;
@@ -381,7 +373,7 @@
     };
   }
 
-  function describeAncestry(video, levels = 8) {
+  function describeAncestry(video, levels = 4) {
     const chain = [];
     let cur = video;
     let depth = 0;
@@ -439,6 +431,21 @@
     };
   }
 
+  // ================== Helpers de modo ==================
+
+  function setMode(newMode) {
+    if (!VALID_MODES.includes(newMode)) {
+      log(`Mode invalida: ${newMode}`);
+      return false;
+    }
+    state.mode = newMode;
+    saveState();
+    applyModeClass();
+    applyMarks();
+    log(`Modo: ${newMode}`);
+    return true;
+  }
+
   // ================== Listener de mensagens ==================
 
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
@@ -450,16 +457,33 @@
 
     switch (msg.cmd) {
       case 'getState': {
+        const camClone = cloneNodes.cam;
+        const slidesClone = cloneNodes.slides;
         sendResponse({
           ok: true,
           camPid: state.camPid,
           slidesPid: state.slidesPid,
-          splitActive: state.splitActive,
+          mode: state.mode,
+          splitActive: state.mode !== 'off', // backwards compat
           selectionMode: state.selectionMode,
           videoCount: document.querySelectorAll('video').length,
           camMarked: !!document.querySelector('video[data-msb-role="cam"]'),
-          slidesMarked: !!document.querySelector('video[data-msb-role="slides"]')
+          slidesMarked: !!document.querySelector('video[data-msb-role="slides"]'),
+          camResolution: camClone && camClone.videoWidth ? `${camClone.videoWidth}x${camClone.videoHeight}` : null,
+          slidesResolution: slidesClone && slidesClone.videoWidth ? `${slidesClone.videoWidth}x${slidesClone.videoHeight}` : null
         });
+        return false;
+      }
+      case 'setMode': {
+        const ok = setMode(msg.mode);
+        sendResponse({ ok, mode: state.mode });
+        return false;
+      }
+      case 'toggleSplit': {
+        // Atalho: off <-> split
+        const newMode = state.mode === 'off' ? 'split' : 'off';
+        setMode(newMode);
+        sendResponse({ ok: true, mode: state.mode, splitActive: state.mode !== 'off' });
         return false;
       }
       case 'startSelection': {
@@ -481,11 +505,8 @@
           sendResponse({ ok: false, error: 'sem [data-participant-id] no caminho do target' });
           return false;
         }
-        if (msg.role === 'cam') {
-          state.camPid = pid;
-        } else {
-          state.slidesPid = pid;
-        }
+        if (msg.role === 'cam') state.camPid = pid;
+        else state.slidesPid = pid;
         log(`Marcado via menu de contexto: ${msg.role} = ${pid}`);
         saveState();
         applyMarks();
@@ -497,22 +518,14 @@
         sendResponse({ ok: true });
         return false;
       }
-      case 'toggleSplit': {
-        state.splitActive = !state.splitActive;
-        saveState();
-        applySplitClass();
-        applyMarks();
-        sendResponse({ ok: true, splitActive: state.splitActive });
-        return false;
-      }
       case 'clear': {
         state.camPid = null;
         state.slidesPid = null;
-        state.splitActive = false;
+        state.mode = 'off';
         exitSelectionMode();
         saveState();
         applyMarks();
-        applySplitClass();
+        applyModeClass();
         sendResponse({ ok: true });
         return false;
       }

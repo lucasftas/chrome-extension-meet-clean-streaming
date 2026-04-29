@@ -1,14 +1,12 @@
 /*
  * Meet Split for Broadcast - Content Styles
  *
- * Classes:
- *  - body.msb-selecting / .msb-selecting-cam / .msb-selecting-slides
- *      Modo de selecao ativo: cursor crosshair + outline em hover sobre tiles.
- *  - body.msb-active
- *      Split mode ligado: overlay preto fullscreen.
- *  - video[data-msb-clone="cam"|"slides"]
- *      Clones criados em document.body via syncClones() com srcObject das streams
- *      originais. Position fixed em 50/50, fora do stacking context do Meet.
+ * Classes principais:
+ *  - body.msb-active: presente em qualquer modo != off (overlay preto + clones)
+ *  - body.msb-mode-split: 2 clones lado a lado 50/50
+ *  - body.msb-mode-solo-cam: apenas cam fullscreen
+ *  - body.msb-mode-solo-slides: apenas slides fullscreen
+ *  - body[data-msb-meet-popup]: popup nativa do Meet (slide em janela separada)
  */
 
 /* ============== Modo de selecao ============== */
@@ -33,15 +31,13 @@ body.msb-selecting-slides [data-participant-id]:hover {
   box-shadow: 0 0 0 9999px rgba(76, 175, 80, 0.15) inset !important;
 }
 
-/* ============== Split mode ============== */
+/* ============== Common (qualquer modo ativo) ============== */
 
 body.msb-active {
   overflow: hidden !important;
 }
 
-/* Overlay preto fullscreen escondendo a UI do Meet
- * Ancorado em bottom: 0 pra coincidir com a base da viewport (igual aos clones).
- */
+/* Overlay preto fullscreen escondendo a UI do Meet */
 body.msb-active::before {
   content: '';
   position: fixed;
@@ -54,66 +50,8 @@ body.msb-active::before {
   pointer-events: auto;
 }
 
-/* Clones criados em document.body via syncClones()
- *
- * IMPORTANTE: ancorados em bottom:0 (nao top:0) pra que a base dos boxes
- * fique sempre alinhada com a base do navegador. Garante posicao estavel
- * independente de barra de favoritos, modo fullscreen, ou qualquer outra
- * variaçao na altura da chrome do browser - util pra captura externa
- * (Crop em coordenadas absolutas no vMix, recorte de tela, etc).
- */
-video[data-msb-clone] {
-  position: fixed !important;
-  bottom: 0 !important;
-  height: 100vh !important;
-  width: 50vw !important;
-  object-fit: contain !important;
-  /* object-position: centro horizontal + base vertical
-   * Cola o conteudo do video na base do pane. Com aspect ratio diferente
-   * do pane, o letterbox preto fica todo em cima (em vez de dividido entre
-   * cima e baixo). Combinado com bottom:0, garante que a base do conteudo
-   * do video coincide com a base da viewport. */
-  object-position: 50% 100% !important;
-  background: #000 !important;
-  z-index: 2147483647 !important;
-  display: block !important;
-  border: 0 !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  transform: none !important;
-  filter: none !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  clip-path: none !important;
-  pointer-events: none !important;
-}
-
-video[data-msb-clone="cam"] {
-  left: 0 !important;
-  right: auto !important;
-}
-
-video[data-msb-clone="slides"] {
-  left: 50vw !important;
-  right: auto !important;
-}
-
-/* HD trick: quando split ativo, forca os <video> ORIGINAIS marcados
- * (data-msb-role, NAO os clones) a renderizarem off-screen em 1920x1080.
- *
- * Por que isso aumenta a resolucao do clone:
- *   O Meet usa Simulcast (envia varias resolucoes simultaneas) e escolhe
- *   qual track decodificar baseado no bounding rect do <video> renderizado.
- *   Tile pequeno (ex: 1016x572) -> pede 360p. Tile grande (1920x1080) ->
- *   pede 720p ou 1080p. Como o clone compartilha a MESMA MediaStream do
- *   original (via srcObject), aumentar a res pedida no original beneficia
- *   o clone automaticamente.
- *
- * Off-screen via left:-10000px em vez de display:none/visibility:hidden
- * pra garantir que o renderer continue decodificando (display:none pararia
- * a track, e visibility:hidden em alguns browsers reduz prioridade).
- *
- * z-index: -1 garante que fica atras de tudo (nao pode ser visto). */
+/* HD Simulcast hint: forca <video> originais marcados a renderizar off-screen
+ * em 1920x1080, induzindo o Meet a pedir tracks HD do simulcast. */
 body.msb-active video[data-msb-role] {
   position: fixed !important;
   left: -10000px !important;
@@ -130,6 +68,97 @@ body.msb-active video[data-msb-role] {
   filter: none !important;
 }
 
-/* Sem aviso textual quando algum slot estiver vazio - panes pretos sao
- * suficientes pra sinalizar pro operador, e nao vazam pro vMix durante
- * intervalos transitorios (ex: screenshare parando e voltando). */
+/* Estilo base dos clones - posicao depende do modo (regras especificas abaixo) */
+video[data-msb-clone] {
+  position: fixed !important;
+  bottom: 0 !important;
+  height: 100vh !important;
+  object-fit: contain !important;
+  object-position: 50% 100% !important;
+  background: #000 !important;
+  z-index: 2147483647 !important;
+  display: block !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  transform: none !important;
+  filter: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  clip-path: none !important;
+  pointer-events: none !important;
+}
+
+/* ============== MODO: split 50/50 ============== */
+
+body.msb-mode-split video[data-msb-clone="cam"] {
+  width: 50vw !important;
+  left: 0 !important;
+  right: auto !important;
+}
+
+body.msb-mode-split video[data-msb-clone="slides"] {
+  width: 50vw !important;
+  left: 50vw !important;
+  right: auto !important;
+}
+
+/* ============== MODO: solo-cam ============== */
+
+body.msb-mode-solo-cam video[data-msb-clone="cam"] {
+  width: 100vw !important;
+  left: 0 !important;
+  right: auto !important;
+}
+
+body.msb-mode-solo-cam video[data-msb-clone="slides"] {
+  display: none !important;
+}
+
+/* ============== MODO: solo-slides ============== */
+
+body.msb-mode-solo-slides video[data-msb-clone="slides"] {
+  width: 100vw !important;
+  left: 0 !important;
+  right: auto !important;
+}
+
+body.msb-mode-solo-slides video[data-msb-clone="cam"] {
+  display: none !important;
+}
+
+/* ============== Popup nativa do Meet ============== */
+/* Quando o operador usa "Abrir em uma nova janela" do Meet, abre uma popup
+ * about:blank com o video do screenshare. A extensao injeta o atributo
+ * data-msb-meet-popup no body dessa janela. Aqui limpamos UI residual e
+ * maximizamos o video pra ficar pronto pro vMix Window Capture. */
+
+body[data-msb-meet-popup] {
+  background: #000 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+body[data-msb-meet-popup] video {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  object-fit: contain !important;
+  object-position: 50% 100% !important;
+  background: #000 !important;
+  z-index: 2147483647 !important;
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  transform: none !important;
+  filter: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Esconde header/controls da popup do Meet (mantem so o video) */
+body[data-msb-meet-popup] > *:not(video) {
+  display: none !important;
+}

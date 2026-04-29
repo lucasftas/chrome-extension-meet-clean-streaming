@@ -21,6 +21,32 @@ Primeira commit do repositório. Sem código de extensão ainda — apenas captu
 - Distribuição: ZIP versionado em GitHub Release (load unpacked), Chrome Web Store fica para depois.
 - Privacidade: projeto será público — sem referências a empresa/marca pessoal em nenhum artefato.
 
+## v0.2.0 — 2026-04-28 — Modos de layout + popup nativa + Design 3
+
+Release significativa: introduz múltiplos modos de operação (não só Split 50/50), suporta a popup nativa "Abrir em uma nova janela" do Meet com limpeza automática, popup redesenhado em estilo OBS/vMix com indicador LIVE, e ícone próprio gerado via System.Drawing.
+
+**Entregue:**
+- `state.mode` substitui `splitActive`. 4 modos: `off`, `split`, `solo-cam`, `solo-slides`. Migração automática do storage antigo.
+- `extension/style.css` reescrito com regras `body.msb-mode-*` controlando posicionamento e visibilidade dos clones por modo.
+- `content.js` bifurcado em 2 paths:
+  - **Janela principal**: lógica completa (selection + clones + modos + auto-redetect + listeners de stream + keep-alive).
+  - **Popup nativa do Meet**: detectada via `window.opener` + URL `about:blank`. Aplica `data-msb-meet-popup` no body; CSS faz o resto (esconde tudo exceto `<video>`, maximiza fullscreen com object-position bottom).
+- Manifest V3: `match_about_blank: true` + `all_frames: true` no content_scripts → injeção automática na popup nativa.
+- `extension/popup.html` + `popup.js` reescritos com Design 3 (Live Dashboard):
+  - Top bar com indicador 🔴 LIVE pulsando quando modo != off, IDLE caso contrário.
+  - Stats inline com PID curto + resolução real do clone (`videoWidth × videoHeight`).
+  - Grid 2×2 de modos com botão ativo destacado em azul.
+  - Avisos laranja quando split ativo + tile correspondente sumiu.
+  - Detecção best-effort da popup nativa via `chrome.tabs.query`.
+- `extension/background.js` expandido com 4 itens de menu pra trocar modo direto (Off/Split/Solo CAM/Solo SLIDES). `documentUrlPatterns` removido pra cobrir também a popup `about:blank`.
+- `extension/icons/icon-{16,48,128}.png` gerados via `scripts/build-icons.ps1` (System.Drawing + GraphicsPath com cantos arredondados procedurais). Design E (REC + Split): retângulos azul + verde com bolinha vermelha de REC no topo, fundo preto rounded.
+- Manifest com `default_icon` + `icons` apontando pros PNGs.
+
+**Decisões de design:**
+- Modos exclusivos (não combinação de toggles) — operadores em live precisam de um único click pra alternar entre cenários comuns.
+- "Janela separada de SLIDES" usa o botão NATIVO do Meet (em vez de implementar Document PiP custom). A extensão só LIMPA a popup que o Meet já cria.
+- Ícone gerado via PowerShell + System.Drawing (sem dependência de Inkscape/ImageMagick) — script reproduzível, qualquer um na máquina Windows pode regerar.
+
 ## v0.1.2 — 2026-04-28 — Menu de contexto (clique direito)
 
 Endereça o caso da popup window do Meet (recurso "Abrir em janela separada") onde a janela não tem barra de URL nem ícone da extensão na toolbar — o operador não tinha como acessar comandos da extensão. Solução: menu de contexto via `chrome.contextMenus` API, disponível em qualquer janela do Chrome com URL no padrão `meet.google.com/*`.
