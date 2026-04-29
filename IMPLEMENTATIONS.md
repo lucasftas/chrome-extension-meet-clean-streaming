@@ -21,6 +21,25 @@ Primeira commit do repositório. Sem código de extensão ainda — apenas captu
 - Distribuição: ZIP versionado em GitHub Release (load unpacked), Chrome Web Store fica para depois.
 - Privacidade: projeto será público — sem referências a empresa/marca pessoal em nenhum artefato.
 
+## v0.2.3 — 2026-04-29 — Maturidade documental + preparação pra publicação
+
+Release sem mudanças funcionais na extensão. Marca o milestone de documentação madura e repositório pronto pra ser tornado público quando o dono decidir.
+
+**Entregue:**
+- `README.md` reescrito (em inglês, formato pra atrair stargazers/contribuidores).
+- `JOURNEY.md` novo — relato narrativo de desenvolvimento (~500 linhas) cobrindo problema original, spec inicial, 9 versões internas com cada descoberta técnica, 7 releases públicas.
+- `CLAUDE.md` sanitizado — removidas referências literais a strings privadas que apareciam como exemplos do que evitar.
+- `~/.claude/CLAUDE.md` global do dono atualizado com a lista de termos sensíveis específicos (que não devem aparecer nesse repo nem em outros públicos).
+- Limpeza prévia de arquivos internos do tracking: `OPERATIONS.md`, `Implementação-Meet-ISO.md`, `novas_implementacoes/`, `*.code-workspace` movidos pra `.gitignore`.
+
+**Por que bumpar versão sem mudança de código?** Marca o milestone "documentação madura" no histórico de releases. ZIP `v0.2.3` é binariamente equivalente ao `v0.2.2` em comportamento, mas o release notes do GitHub serve de checkpoint pra apontar quem vier depois ("foi a partir daqui que o projeto ficou pronto pra contribuição externa").
+
+**Auditoria pré-publicação:**
+```bash
+git grep -iE "<padroes-sensiveis>"  # zero matches
+```
+Histórico do git limpo, sem credenciais vazadas, autor identificado apenas via email anonimizado do GitHub (`@users.noreply.github.com`).
+
 ## v0.2.2 — 2026-04-29 — Hotfix auto-redetect pegando cam errada
 
 Quando o operador abre o slide em janela separada (popup nativa do Meet), o tile do screenshare na janela principal perde o `data-participant-id`. O `findTileByPid(slidesPid)` retorna null e dispara auto-redetect. Sem filtros adequados, o único candidato HD que sobra na janela principal é cam de outro participante — slide pane passa a mostrar cam.

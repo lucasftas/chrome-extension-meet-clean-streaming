@@ -15,6 +15,19 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Ícone próprio (16/48/128 PNG).
 - Publicação na Chrome Web Store.
 
+## [0.2.3] - 2026-04-29
+
+### Changed
+- **README reescrito** em formato voltado pra atrair contribuidores e stargazers no GitHub: tagline impactante, ASCII art comparativo (Meet sujo vs feeds limpos), badges de release/Manifest/zero-deps, lista de features destacada, quick start em 3 passos, "Architecture in 2 minutes" mostrando o coração técnico (clone via `srcObject`), roadmap como checklist e CTA final pra estrela. Em inglês (audiência de operadores broadcast/vMix/OBS é global).
+- **CLAUDE.md sanitizado** — removidas referências literais a strings privadas (que apareciam como exemplos do que evitar e acabavam vazando o que tentavam proteger). Agora usa categorias genéricas; termos exatos a serem grepados ficam no `~/.claude/CLAUDE.md` global do dono. Reforço da regra "tratar repo como público em todo commit, sempre".
+
+### Added
+- **`JOURNEY.md`** — relato narrativo do desenvolvimento em uma sessão de iteração intensa. Cobre o problema original, a spec que não sobreviveu, 9 versões internas (`v0.0.1`–`v0.0.8`) com a descoberta de cada bug e fix, 7 releases públicas e os principais insights técnicos (stacking context, cadáveres do Meet, listeners de stream, auto-redetect com false positive). Material útil pra novos contribuidores entenderem o "porquê" das decisões.
+
+### Notes
+- **Sem mudanças funcionais na extensão** — o ZIP `v0.2.3` é tecnicamente idêntico em comportamento ao `v0.2.2`. Esta release marca a maturidade documental do projeto e preparação pra eventual publicação pública do repositório.
+- Auditoria de privacidade pré-publicação: `git grep` com padrões sensíveis retorna zero matches. Histórico do git limpo. Arquivos internos (`OPERATIONS.md`, `Implementação-Meet-ISO.md`, `novas_implementacoes/`, `*.code-workspace`) movidos pra `.gitignore` mantendo cópias locais.
+
 ## [0.2.2] - 2026-04-29
 
 ### Fixed
