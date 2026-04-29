@@ -15,6 +15,15 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Ícone próprio (16/48/128 PNG).
 - Publicação na Chrome Web Store.
 
+## [0.2.2] - 2026-04-29
+
+### Fixed
+- **Auto-redetect SLIDES marcava cam de outro participante quando o slide ia pra popup nativa.** Quando o operador clica em "Abrir em uma nova janela" do screenshare, o tile do slide na janela principal perde o `data-participant-id` (Meet o "transfere" pra popup). O `findTileByPid(slidesPid)` retorna null → auto-redetect dispara → único candidato com `videoWidth >= 1000` que sobra é cam HD de outro participante → falso positivo, slide pane mostra cam.
+
+### Changed
+- **Filtro heurístico anti-cam** em `findScreenshareCandidate`: descarta tiles cuja sub-árvore contém classe `iPFm3e` ou cujo `<video>` tem classe `Gv1mTb-PVLJEc` (observação empírica: cams têm essas classes, screenshares não). Classes minificadas do Meet podem mudar entre versões — se pararem de funcionar, atualizar com base em snapshot novo do DOM.
+- **Supressão de auto-redetect quando popup do slide está aberta**: o content script da popup seta `chrome.storage.local.msb_popup_open_at = Date.now()` ao carregar (com heartbeat de 5s) e remove em `beforeunload`/`pagehide`. A janela principal lê essa flag (com cache local atualizado via `chrome.storage.onChanged`) e pula o auto-redetect enquanto popup está ativa. Quando popup fecha, slide volta normal.
+
 ## [0.2.1] - 2026-04-29
 
 ### Fixed

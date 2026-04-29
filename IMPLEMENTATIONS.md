@@ -21,6 +21,20 @@ Primeira commit do repositório. Sem código de extensão ainda — apenas captu
 - Distribuição: ZIP versionado em GitHub Release (load unpacked), Chrome Web Store fica para depois.
 - Privacidade: projeto será público — sem referências a empresa/marca pessoal em nenhum artefato.
 
+## v0.2.2 — 2026-04-29 — Hotfix auto-redetect pegando cam errada
+
+Quando o operador abre o slide em janela separada (popup nativa do Meet), o tile do screenshare na janela principal perde o `data-participant-id`. O `findTileByPid(slidesPid)` retorna null e dispara auto-redetect. Sem filtros adequados, o único candidato HD que sobra na janela principal é cam de outro participante — slide pane passa a mostrar cam.
+
+**Solução em 2 camadas:**
+
+1. **Filtro heurístico anti-cam**: classes empíricas do DOM do Meet diferenciam cam de screenshare:
+   - Cams têm `iPFm3e` na sub-árvore do tile
+   - Cams em layout PIP/destaque têm `Gv1mTb-PVLJEc` no `<video>`
+   - Screenshares não têm nenhuma das duas
+   `findScreenshareCandidate` agora descarta tiles que batem nesses padrões.
+
+2. **Flag `msb_popup_open_at` em `chrome.storage.local`**: setada pelo content script da popup ao carregar (com heartbeat de 5s) e removida em `beforeunload`/`pagehide`. A janela principal mantém cache local via `chrome.storage.onChanged` listener. Quando popup ativa, auto-redetect é suprimido — `slidesPid` permanece stale temporariamente, mas o slide volta sozinho quando o user fecha a popup (PID novo no DOM principal).
+
 ## v0.2.1 — 2026-04-29 — Hotfix popup preta
 
 Corrige regressão da v0.2.0 onde a popup nativa do Meet ("Abrir em uma nova janela") ficava preta. Causa: regra CSS `body[data-msb-meet-popup] > *:not(video) { display: none !important }` escondia o `<div>` wrapper que continha o `<video>`, sumindo com o vídeo junto.

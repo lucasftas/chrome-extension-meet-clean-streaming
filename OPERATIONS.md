@@ -56,3 +56,4 @@ Registro de operações e solicitações por sessão. Cada entrada agrupa as aç
   - `scripts/build-icons.ps1` gerando PNGs do design E em 16/48/128.
 - [x] Build v0.2.0 (15.65 KB) + commit + release + docs.
 - [x] Hotfix v0.2.1 — popup nativa do Meet ficava preta. Causa: regra CSS `body[data-msb-meet-popup] > *:not(video) { display:none }` escondia `<div>` wrapper junto com `<video>` dentro. Solução: clone via srcObject (mesma estratégia da janela principal) + overlay preto. Build + commit + release.
+- [x] Hotfix v0.2.2 — auto-redetect SLIDES marcava cam de outro participante quando slide ia pra popup nativa. Causa: tile do slide na janela principal perde `data-participant-id` ao abrir popup; único candidato HD que sobra com PID é cam HD de outro participante. Solução: (1) filtro heurístico anti-cam (classes `iPFm3e` e `Gv1mTb-PVLJEc`), (2) supressão de auto-redetect via flag `msb_popup_open_at` em `chrome.storage.local` setada pela popup. Build + commit + release.

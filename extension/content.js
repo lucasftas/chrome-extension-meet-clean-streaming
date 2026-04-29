@@ -36,6 +36,23 @@
   if (isMeetPopup) {
     console.log(LOG_PREFIX, 'Popup do Meet detectada em', window.location.href);
 
+    // Sinaliza pra janela principal que ha popup ativa - usado pra suprimir
+    // o auto-redetect SLIDES enquanto o screenshare esta na popup.
+    function setPopupFlag() {
+      chrome.storage.local.set({ msb_popup_open_at: Date.now() }).catch(() => {});
+    }
+    setPopupFlag();
+    // Heartbeat (caso o beforeunload nao dispare por algum motivo)
+    const popupHeartbeat = setInterval(setPopupFlag, 5000);
+    window.addEventListener('beforeunload', () => {
+      clearInterval(popupHeartbeat);
+      chrome.storage.local.remove('msb_popup_open_at').catch(() => {});
+    });
+    window.addEventListener('pagehide', () => {
+      clearInterval(popupHeartbeat);
+      chrome.storage.local.remove('msb_popup_open_at').catch(() => {});
+    });
+
     let popupClone = null;
 
     function pickLiveVideo() {
@@ -213,7 +230,49 @@
     return document.querySelector(`[data-participant-id="${CSS.escape(pid)}"]`);
   }
 
+  /**
+   * Cache local da flag "popup do slide aberta" (setada pelo content_script
+   * da popup). Atualizado em tempo real via chrome.storage.onChanged. Usado
+   * pra suprimir auto-redetect enquanto o slide esta na popup nativa.
+   */
+  let popupOpenCached = false;
+  chrome.storage.local.get('msb_popup_open_at').then(d => {
+    if (d.msb_popup_open_at && (Date.now() - d.msb_popup_open_at) < 30_000) {
+      popupOpenCached = true;
+    }
+  }).catch(() => {});
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && 'msb_popup_open_at' in changes) {
+      popupOpenCached = !!changes.msb_popup_open_at.newValue;
+      log(`Popup ${popupOpenCached ? 'aberta' : 'fechada'} (flag de storage).`);
+    }
+  });
+
+  /**
+   * Heuristica empirica baseada em DOM real do Meet:
+   *  - Cams tem classe `iPFm3e` na sub-arvore (visto em CNjCjf, dkjMxf)
+   *  - Cams em layout PIP/destaque tem classe `Gv1mTb-PVLJEc` no <video>
+   *  - Screenshares NAO tem nenhuma das duas
+   *
+   * Classes minificadas mudam entre versoes do Meet - se pararem de
+   * funcionar, atualizar com base em snapshot novo do DOM.
+   */
+  function tileLooksLikeCam(tile) {
+    if (tile.querySelector('.iPFm3e')) return true;
+    const video = tile.querySelector('video.Gv1mTb-PVLJEc:not([data-msb-clone])');
+    if (video) return true;
+    return false;
+  }
+
   function findScreenshareCandidate() {
+    // Suprimir auto-redetect enquanto slide esta na popup nativa do Meet
+    // (slide tile na janela principal perde data-participant-id, e o unico
+    // candidato HD que sobra e cam de outro participante - falso positivo).
+    if (popupOpenCached) {
+      log('Auto-redetect suprimido: popup do slide esta aberta.');
+      return null;
+    }
+
     const allTiles = document.querySelectorAll('[data-participant-id]');
     let best = null;
     let bestArea = 0;
@@ -221,6 +280,9 @@
     for (const tile of allTiles) {
       const pid = tile.dataset && tile.dataset.participantId;
       if (!pid || pid === state.camPid) continue;
+
+      // Filtro anti-cam: descarta tiles que parecem cam pela heuristica DOM
+      if (tileLooksLikeCam(tile)) continue;
 
       const videos = tile.querySelectorAll('video:not([data-msb-clone])');
       let qualifies = false;
