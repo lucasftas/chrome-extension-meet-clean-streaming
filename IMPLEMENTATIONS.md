@@ -21,6 +21,29 @@ Primeira commit do repositório. Sem código de extensão ainda — apenas captu
 - Distribuição: ZIP versionado em GitHub Release (load unpacked), Chrome Web Store fica para depois.
 - Privacidade: projeto será público — sem referências a empresa/marca pessoal em nenhum artefato.
 
+## v0.3.0 — 2026-04-29 — SVG inline para renderização cross-platform
+
+Bug reportado em ambiente Linux sem fontes emoji do sistema (Debian 13 minimal + Chrome 147): todos os ícones do popup apareciam como **tofu** (quadrados vazios). Causa: caracteres Unicode literais (emojis 📹 🖥️ 📡 🗑, box-drawing ▦, geometric ⚪, arrows ↗ ↻, dingbats ✓) dependem de fontes específicas do SO (Noto Color Emoji, Apple Color Emoji, Segoe UI Emoji, DejaVu Sans extras) que não vêm em distros server-grade.
+
+**Solução escolhida (Opção A da spec):** SVG inline. Zero dependência de fonte, escala perfeita, herda cor via `currentColor`, funciona offline. Sem CDN externa nem fetch dinâmico (Manifest V3 + extension store policy ficam felizes).
+
+**Entregue:**
+- `extension/icons.js` com 11 SVGs Lucide-style como const strings:
+  - 14px: `video`, `presentation`, `radioTower`, `eraser`, `refreshCw`, `check`, `arrowUpRight`
+  - 22px (mode buttons): `videoLg`, `presentationLg`, `circleOffLg`, `columns2Lg`
+- `popup.html` reescrito: emojis substituídos por `<span data-icon="key">` placeholders + ajustes de CSS (flex/gap) pra alinhamento ícone+texto.
+- `popup.js`: nova função `renderInlineIcons()` que itera elementos com `[data-icon]` ou `[data-icon-lg]` e injeta o SVG via `innerHTML`. Roda uma vez no carregamento do popup. Também substitui `✓` por `ICONS.check` no badge dinâmico de popup detection.
+- Em-dashes (`—`, U+2014) e ellipsis (`…`, U+2026) em strings JS substituídos por equivalentes ASCII (`-`, `...`) por segurança em ambientes minimal — evita qualquer dependência de fonte mesmo pra pontuação.
+- Acessibilidade: `aria-hidden="true"` em cada SVG decorativo + `aria-label` em botões/labels onde o ícone é a única indicação da função.
+
+**Validação:**
+```bash
+# Zero matches em arquivos da extensão após o fix
+grep -P "[\x{1F000}-\x{1FFFF}]|[\x{2500}-\x{27BF}]|[\x{2190}-\x{21FF}]" extension/*.{html,js,css}
+```
+
+**Não muda:** layout, paleta de cores, comportamento funcional. Toolbar PNG icon (`action.default_icon`) intocado — é separado do popup.
+
 ## v0.2.4 — 2026-04-29 — Gerador de atalho Chrome
 
 Pequena adição que reduz a fricção de setup pra novos usuários da extensão. Sem o atalho com flags de hardening, qualquer site congela quando o Chrome perde foco — o vMix capture vai pra cinza no meio da live. Antes da v0.2.4, o operador precisava criar manualmente um shortcut do Windows e colar 3 flags no campo Target. Agora roda 1 comando.

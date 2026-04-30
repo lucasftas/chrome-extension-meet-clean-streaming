@@ -1,5 +1,8 @@
 /**
  * Meet Split for Broadcast - Popup (Design 3: Live Dashboard)
+ *
+ * Depende de icons.js (carregado antes via <script src> no popup.html) que
+ * exporta o objeto global ICONS com strings SVG inline.
  */
 
 const els = {
@@ -22,6 +25,20 @@ const els = {
 
 const modeButtons = document.querySelectorAll('.mode-btn');
 
+// Renderiza os SVG inline nos placeholders [data-icon] e [data-icon-lg].
+// Faz isso uma vez na inicializacao do popup.
+function renderInlineIcons() {
+  document.querySelectorAll('[data-icon]').forEach(el => {
+    const key = el.dataset.icon;
+    if (ICONS[key]) el.innerHTML = ICONS[key];
+  });
+  document.querySelectorAll('[data-icon-lg]').forEach(el => {
+    const key = el.dataset.iconLg;
+    if (ICONS[key]) el.innerHTML = ICONS[key];
+  });
+}
+renderInlineIcons();
+
 function setStatus(msg) {
   els.status.textContent = msg;
 }
@@ -39,7 +56,7 @@ async function getActiveMeetTab() {
     return null;
   }
   if (!tab.url || !tab.url.startsWith('https://meet.google.com/')) {
-    setStatus(`Aba ativa não é Google Meet:\n${tab.url || '(sem URL)'}`);
+    setStatus(`Aba ativa nao e Google Meet:\n${tab.url || '(sem URL)'}`);
     return null;
   }
   return tab;
@@ -58,30 +75,29 @@ async function sendCmd(cmd, payload = {}) {
 
 function renderStat(el, pid, resolution, marked) {
   if (!pid) {
-    el.textContent = 'não marcado';
+    el.textContent = 'nao marcado';
     el.classList.remove('ok');
     el.classList.add('pending');
     return;
   }
   const pidShort = shortPid(pid);
   if (marked && resolution) {
-    el.textContent = `${pidShort} · ${resolution}`;
+    el.textContent = `${pidShort} - ${resolution}`;
     el.classList.add('ok');
     el.classList.remove('pending');
   } else if (marked) {
-    el.textContent = `${pidShort} · OK`;
+    el.textContent = `${pidShort} - OK`;
     el.classList.add('ok');
     el.classList.remove('pending');
   } else {
-    el.textContent = `${pidShort} · aguardando`;
+    el.textContent = `${pidShort} - aguardando`;
     el.classList.remove('ok');
     el.classList.add('pending');
   }
 }
 
 async function checkPopupDetected() {
-  // Verifica se ha alguma janela about:blank com opener Meet aberta
-  // Heuristica: vai pelo chrome.tabs.query
+  // Heuristica: existe alguma aba about:blank? (potencial popup nativa do Meet)
   try {
     const tabs = await chrome.tabs.query({});
     const popup = tabs.find(t => t.url && (t.url === 'about:blank' || t.url.startsWith('about:blank')));
@@ -93,7 +109,7 @@ async function checkPopupDetected() {
 
 function renderState(s) {
   if (!s || !s.ok) {
-    setStatus('Estado indisponível. Recarregue a aba do Meet.');
+    setStatus('Estado indisponivel. Recarregue a aba do Meet.');
     return;
   }
 
@@ -118,13 +134,13 @@ function renderState(s) {
   // Selection hint
   els.selectionHint.classList.toggle('hidden', !s.selectionMode);
   if (s.selectionMode) {
-    els.selectionHint.textContent = `Modo seleção ${s.selectionMode.toUpperCase()} ativo — clique no tile dentro do Meet.`;
+    els.selectionHint.textContent = `Modo selecao ${s.selectionMode.toUpperCase()} ativo - clique no tile dentro do Meet.`;
   }
 
-  // Popup detection (best effort)
+  // Popup detection (best effort) - usa SVG check pra evitar tofu em Linux sem fontes emoji
   checkPopupDetected().then(detected => {
     if (detected) {
-      els.popupInfoTag.textContent = '✓ detectada';
+      els.popupInfoTag.innerHTML = (ICONS.check || '') + ' detectada';
       els.popupInfoTag.className = 'popup-info-tag detected';
     } else {
       els.popupInfoTag.textContent = 'aguardando';
@@ -135,16 +151,16 @@ function renderState(s) {
   // Status text
   const camStatus = s.camMarked ? 'OK' : (s.camPid ? 'aguardando' : 'pendente');
   const slidesStatus = s.slidesMarked ? 'OK' : (s.slidesPid ? 'aguardando' : 'pendente');
-  setStatus(`videos: ${s.videoCount} · CAM: ${camStatus} · SLIDES: ${slidesStatus}\nmodo: ${s.mode || 'off'}`);
+  setStatus(`videos: ${s.videoCount} | CAM: ${camStatus} | SLIDES: ${slidesStatus}\nmodo: ${s.mode || 'off'}`);
 
-  // Warnings (split ativo mas tile sumiu)
+  // Warnings
   els.warnings.innerHTML = '';
   if (s.mode && s.mode !== 'off') {
     if (s.camPid && !s.camMarked && (s.mode === 'split' || s.mode === 'solo-cam')) {
-      addWarning('CAM não encontrada no DOM. Verifique se o layout do Meet não está em "Em destaque" sem fixar a cam marcada. Use Auto/Mosaico/Lado a lado, ou Spotlight a cam.');
+      addWarning('CAM nao encontrada no DOM. Verifique se o layout do Meet nao esta em "Em destaque" sem fixar a cam marcada. Use Auto/Mosaico/Lado a lado, ou Spotlight a cam.');
     }
     if (s.slidesPid && !s.slidesMarked && (s.mode === 'split' || s.mode === 'solo-slides')) {
-      addWarning('SLIDES não encontrado no DOM. Verifique se o screenshare ainda está ativo. (Auto-redetect deve assumir em segundos quando o convidado voltar a compartilhar.)');
+      addWarning('SLIDES nao encontrado no DOM. Verifique se o screenshare ainda esta ativo. (Auto-redetect deve assumir em segundos quando o convidado voltar a compartilhar.)');
     }
   }
 }
@@ -166,7 +182,7 @@ async function refresh() {
 els.btnMarkCam.addEventListener('click', async () => {
   const s = await sendCmd('startSelection', { role: 'cam' });
   if (s && s.ok) {
-    setStatus('Modo seleção CAM ativo.\nClique no tile da câmera no Meet.');
+    setStatus('Modo selecao CAM ativo.\nClique no tile da camera no Meet.');
     setTimeout(() => window.close(), 800);
   }
 });
@@ -174,7 +190,7 @@ els.btnMarkCam.addEventListener('click', async () => {
 els.btnMarkSlides.addEventListener('click', async () => {
   const s = await sendCmd('startSelection', { role: 'slides' });
   if (s && s.ok) {
-    setStatus('Modo seleção SLIDES ativo.\nClique no tile da apresentação no Meet.');
+    setStatus('Modo selecao SLIDES ativo.\nClique no tile da apresentacao no Meet.');
     setTimeout(() => window.close(), 800);
   }
 });
@@ -192,7 +208,7 @@ modeButtons.forEach(btn => {
 els.btnClear.addEventListener('click', async () => {
   const s = await sendCmd('clear');
   if (s && s.ok) {
-    setStatus('Seleções apagadas.');
+    setStatus('Selecoes apagadas.');
     refresh();
   }
 });
@@ -206,9 +222,9 @@ els.btnInspect.addEventListener('click', async () => {
   if (!res || !res.json) return;
   try {
     await navigator.clipboard.writeText(res.json);
-    setStatus(`OK — ${res.videoCount} video(s).\nJSON copiado pra clipboard.`);
+    setStatus(`OK - ${res.videoCount} video(s).\nJSON copiado pra clipboard.`);
   } catch (err) {
-    setStatus(`OK — ${res.videoCount} video(s).\nClipboard falhou — copie do textarea.`);
+    setStatus(`OK - ${res.videoCount} video(s).\nClipboard falhou - copie do textarea.`);
     els.fallback.value = res.json;
     els.fallback.style.display = 'block';
     els.fallback.focus();
@@ -221,7 +237,7 @@ els.btnPing.addEventListener('click', async () => {
   if (res && res.ready) {
     setStatus(`Content script ATIVO.\n${res.videoCount} video(s).`);
   } else {
-    setStatus('Content script não respondeu.\nRecarregue a aba do Meet.');
+    setStatus('Content script nao respondeu.\nRecarregue a aba do Meet.');
   }
 });
 

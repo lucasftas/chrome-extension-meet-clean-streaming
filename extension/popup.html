@@ -65,7 +65,14 @@
     }
     .stat-card.cam { background: rgba(45, 127, 249, 0.1); border-color: rgba(45, 127, 249, 0.4); }
     .stat-card.slides { background: rgba(76, 175, 80, 0.1); border-color: rgba(76, 175, 80, 0.4); }
-    .stat-label { font-size: 10px; margin-bottom: 4px; }
+    .stat-label {
+      font-size: 10px;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .stat-label .icon-host { display: inline-flex; }
     .stat-card.cam .stat-label { color: #87b9ed; }
     .stat-card.slides .stat-label { color: #8fd48f; }
     .stat-value {
@@ -134,7 +141,13 @@
       color: white;
       box-shadow: 0 0 0 2px rgba(45, 127, 249, 0.3);
     }
-    .mode-btn .mode-icon { font-size: 18px; display: block; margin-bottom: 2px; }
+    .mode-btn .mode-icon {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 4px;
+      min-height: 22px;
+    }
     .mode-btn .mode-label { font-size: 9px; font-weight: 700; letter-spacing: 0.3px; }
 
     /* Popup detected info */
@@ -152,11 +165,28 @@
       align-items: center;
       margin-bottom: 4px;
     }
-    .popup-info-title { color: #ff9800; font-weight: 600; }
-    .popup-info-tag { font-size: 9px; padding: 1px 6px; border-radius: 3px; }
+    .popup-info-title {
+      color: #ff9800;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .popup-info-tag { font-size: 9px; padding: 1px 6px; border-radius: 3px; display: inline-flex; align-items: center; gap: 3px; }
     .popup-info-tag.detected { background: #16a34a; color: white; }
     .popup-info-tag.idle { background: #444; color: #aaa; }
     .popup-info-text { color: #999; line-height: 1.4; }
+    .popup-info-text code {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: #2a2a2a;
+      color: #ddd;
+      padding: 1px 4px;
+      border-radius: 2px;
+      font-family: ui-monospace, monospace;
+      font-size: 9px;
+    }
 
     /* Footer */
     .footer {
@@ -172,6 +202,10 @@
       padding: 6px;
       border-radius: 4px;
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
     }
     .footer-btn:hover { background: #222; }
 
@@ -225,7 +259,7 @@
   <!-- Top bar -->
   <div class="topbar">
     <div class="topbar-left">
-      <svg width="16" height="16" viewBox="0 0 128 128">
+      <svg width="16" height="16" viewBox="0 0 128 128" aria-hidden="true">
         <rect width="128" height="128" rx="20" fill="#0d0d0d"/>
         <rect x="14" y="36" width="48" height="56" rx="4" fill="#2d7ff9"/>
         <rect x="66" y="36" width="48" height="56" rx="4" fill="#4caf50"/>
@@ -242,38 +276,38 @@
   <!-- Stats CAM e SLIDES -->
   <div class="stats">
     <div class="stat-card cam">
-      <div class="stat-label">📹 CAM</div>
+      <div class="stat-label" aria-label="CAM"><span class="icon-host" data-icon="video"></span> CAM</div>
       <div id="stat-cam-value" class="stat-value pending">não marcado</div>
       <button type="button" id="btn-mark-cam" class="stat-btn">Marcar CAM</button>
     </div>
     <div class="stat-card slides">
-      <div class="stat-label">🖥️ SLIDES</div>
+      <div class="stat-label" aria-label="SLIDES"><span class="icon-host" data-icon="presentation"></span> SLIDES</div>
       <div id="stat-slides-value" class="stat-value pending">não marcado</div>
       <button type="button" id="btn-mark-slides" class="stat-btn">Marcar SLIDES</button>
     </div>
   </div>
 
   <div class="selection-hint hidden" id="selection-hint">
-    Modo seleção ativo — clique no tile dentro do Meet.
+    Modo seleção ativo - clique no tile dentro do Meet.
   </div>
 
   <!-- Mode selector -->
   <div class="section-label">Modo</div>
   <div class="mode-grid">
-    <button type="button" class="mode-btn" data-mode="off">
-      <span class="mode-icon">⚪</span>
+    <button type="button" class="mode-btn" data-mode="off" aria-label="Modo Off">
+      <span class="mode-icon" data-icon-lg="circleOffLg"></span>
       <span class="mode-label">OFF</span>
     </button>
-    <button type="button" class="mode-btn" data-mode="split">
-      <span class="mode-icon">▦</span>
+    <button type="button" class="mode-btn" data-mode="split" aria-label="Modo Split 50/50">
+      <span class="mode-icon" data-icon-lg="columns2Lg"></span>
       <span class="mode-label">SPLIT</span>
     </button>
-    <button type="button" class="mode-btn" data-mode="solo-cam">
-      <span class="mode-icon">📹</span>
+    <button type="button" class="mode-btn" data-mode="solo-cam" aria-label="Modo Solo CAM">
+      <span class="mode-icon" data-icon-lg="videoLg"></span>
       <span class="mode-label">SOLO CAM</span>
     </button>
-    <button type="button" class="mode-btn" data-mode="solo-slides">
-      <span class="mode-icon">🖥️</span>
+    <button type="button" class="mode-btn" data-mode="solo-slides" aria-label="Modo Solo SLIDES">
+      <span class="mode-icon" data-icon-lg="presentationLg"></span>
       <span class="mode-label">SOLO SLIDES</span>
     </button>
   </div>
@@ -281,23 +315,23 @@
   <!-- Popup detection info -->
   <div class="popup-info">
     <div class="popup-info-header">
-      <span class="popup-info-title">📡 SLIDES popup</span>
+      <span class="popup-info-title"><span class="icon-host" data-icon="radioTower"></span> SLIDES popup</span>
       <span id="popup-info-tag" class="popup-info-tag idle">aguardando</span>
     </div>
-    <div class="popup-info-text">Use o botão <code>↗ Abrir em uma nova janela</code> nativo do Meet. Extensão limpa UI automaticamente.</div>
+    <div class="popup-info-text">Use o botão <code><span class="icon-host" data-icon="arrowUpRight"></span> Abrir em uma nova janela</code> nativo do Meet. Extensão limpa UI automaticamente.</div>
   </div>
 
   <!-- Footer -->
   <div class="footer">
-    <button type="button" id="btn-clear" class="footer-btn">🗑 Limpar</button>
-    <button type="button" id="btn-refresh" class="footer-btn">↻ Atualizar</button>
+    <button type="button" id="btn-clear" class="footer-btn"><span class="icon-host" data-icon="eraser"></span> Limpar</button>
+    <button type="button" id="btn-refresh" class="footer-btn"><span class="icon-host" data-icon="refreshCw"></span> Atualizar</button>
   </div>
 
   <!-- Warnings -->
   <div id="warnings"></div>
 
   <!-- Status -->
-  <div id="status">Carregando…</div>
+  <div id="status">Carregando...</div>
 
   <!-- Debug -->
   <details>
@@ -309,6 +343,7 @@
     <textarea id="fallback" readonly></textarea>
   </details>
 
+  <script src="icons.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

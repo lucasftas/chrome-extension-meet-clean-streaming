@@ -15,6 +15,27 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Ícone próprio (16/48/128 PNG).
 - Publicação na Chrome Web Store.
 
+## [0.3.0] - 2026-04-29
+
+### Fixed
+- **Ícones agora renderizam cross-platform** (Windows / macOS / Linux). No Linux sem fontes emoji do sistema (Debian minimal, Ubuntu Server, containers), todo emoji e box-drawing char no popup aparecia como **tofu** (quadrado vazio). O fix substitui todos os caracteres Unicode visuais por **SVG inline** (Lucide-style). Reproduzível em Debian 13 + Chrome 147 antes do fix; resolvido após.
+
+### Changed
+- **`popup.html`** agora usa `<span data-icon="...">` placeholders nos lugares onde havia emojis. SVGs inline são injetados em runtime pelo `popup.js` via `renderInlineIcons()`.
+- **`popup.js`**: substituído o checkmark Unicode `✓` (U+2713) por `ICONS.check` SVG no badge "detectada" da popup info. Em-dashes e ellipsis em strings JS substituídos por equivalentes ASCII (`-`, `...`) por segurança em ambientes minimal.
+- **CSS**: ajustes de alinhamento (`display: flex`, `align-items: center`, `gap`) em `.stat-label`, `.mode-icon`, `.popup-info-title`, `.popup-info-text code`, `.footer-btn` pra acomodar SVGs inline com texto adjacente.
+- **Acessibilidade**: cada SVG tem `aria-hidden="true"`, e os botões/labels têm `aria-label` quando o ícone é a única indicação visual da função (modo OFF/SPLIT/SOLO CAM/SOLO SLIDES, stat labels CAM/SLIDES).
+
+### Added
+- **`extension/icons.js`** — novo módulo com 11 SVGs Lucide-style como constantes string (video, presentation, radioTower, eraser, refreshCw, check, arrowUpRight + variantes "Lg" 22px pra mode buttons). Helper `injectIcon(selector, key)` exportado pra uso futuro. Fonte: lucide.dev (MIT).
+- **`<script src="icons.js">`** carregado no popup.html antes do `popup.js`.
+- Manifest tem o `icons.js` implícito via `<script src>` no popup; não precisa entrada explícita.
+
+### Verified
+- `grep` de Unicode visual em `extension/*.{html,js,css}` retorna zero matches após o fix.
+- ASCII art e ícones internos agora renderizam por DOM (não dependem de fonte do SO).
+- O ícone do botão da toolbar (`action.default_icon` em PNG) **não foi tocado** — esse é PNG empacotado em `extension/icons/`, separado do popup.
+
 ## [0.2.4] - 2026-04-29
 
 ### Added
